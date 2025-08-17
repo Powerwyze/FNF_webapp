@@ -1,0 +1,45 @@
+import { NextRequest } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+
+export async function POST(req: NextRequest) {
+  // Lazily create client at request time to avoid build-time env access
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+  const { userId, email } = await req.json()
+  
+  if (!userId || !email) {
+    return Response.json({ error: 'Missing userId or email' }, { status: 400 })
+  }
+
+  try {
+    // Check if profile already exists
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single()
+
+    if (existing) {
+      return Response.json({ message: 'Profile already exists', profileId: userId })
+    }
+
+    // Create new profile
+    const { error } = await supabase
+      .from('profiles')
+      .insert({
+        id: userId,
+        email,
+        display_name: email.split('@')[0], // Default display name from email
+        bio: 'New challenger entering the arena.'
+      })
+
+    if (error) throw error
+
+    return Response.json({ success: true, profileId: userId })
+  } catch (error) {
+    console.error('Profile seed error:', error)
+    return Response.json({ error: 'Failed to create profile' }, { status: 500 })
+  }
+}

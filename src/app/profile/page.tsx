@@ -45,17 +45,16 @@ export default function ProfilePage() {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
 
       if (error) {
         console.error('Supabase error:', error)
-        if (error.code === 'PGRST116') {
-          // Profile doesn't exist yet
-          console.log('Profile not found, creating default profile...')
-          await createDefaultProfile()
-        } else {
-          throw error
-        }
+        throw error
+      }
+      if (!data) {
+        // Profile doesn't exist yet
+        console.log('Profile not found, creating default profile...')
+        await createDefaultProfile()
       } else {
         console.log('Profile loaded:', data)
         setProfile(data)
@@ -71,12 +70,13 @@ export default function ProfilePage() {
     if (!user) return
     
     try {
+      const fallbackEmail = user.email ?? `${user.id}@anon.local`
       const { data, error } = await supabase
         .from('profiles')
         .insert({
           id: user.id,
-          email: user.email,
-          display_name: user.email?.split('@')[0] || 'Warrior',
+          email: fallbackEmail,
+          display_name: fallbackEmail.split('@')[0] || 'Warrior',
           bio: 'New challenger entering the arena.',
           rank: 'E',
           exp: 0

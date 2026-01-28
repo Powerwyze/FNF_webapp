@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
+import { requireUser } from '@/lib/serverAuth'
 
 // Create admin client for profile operations
 const supabaseAdmin = createClient(
@@ -27,6 +28,13 @@ export async function POST(req: NextRequest) {
   
   if (!userId || !responses) {
     return Response.json({ error: 'Missing userId or responses' }, { status: 400 })
+  }
+  const auth = await requireUser(req)
+  if (!auth.user) {
+    return Response.json({ error: auth.error || 'Unauthorized' }, { status: 401 })
+  }
+  if (auth.user.id !== userId) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   try {

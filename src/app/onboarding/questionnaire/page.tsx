@@ -13,7 +13,7 @@ type Question = {
 }
 
 export default function QuestionnairePage() {
-  const { user } = useAuth()
+  const { user, session } = useAuth()
   const router = useRouter()
   const [questions, setQuestions] = useState<Question[]>([])
   const [answers, setAnswers] = useState<Record<number, string>>({})
@@ -29,8 +29,13 @@ export default function QuestionnairePage() {
 
   useEffect(() => {
     loadQuestions()
-    loadSavedAnswers()
   }, [])
+
+  useEffect(() => {
+    if (user) {
+      loadSavedAnswers()
+    }
+  }, [user])
 
   const loadQuestions = async () => {
     try {
@@ -113,7 +118,10 @@ export default function QuestionnairePage() {
       // Submit for class assignment
       const response = await fetch('/api/questionnaire/submit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+        },
         body: JSON.stringify({ userId: user.id, responses: answers })
       })
       

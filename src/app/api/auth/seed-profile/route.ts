@@ -1,7 +1,13 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireUser } from '@/lib/serverAuth'
 
 export async function POST(req: NextRequest) {
+  const auth = await requireUser(req)
+  if (!auth.user) {
+    return Response.json({ error: auth.error || 'Unauthorized' }, { status: 401 })
+  }
+
   // Lazily create client at request time to avoid build-time env access
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,6 +17,9 @@ export async function POST(req: NextRequest) {
   
   if (!userId || !email) {
     return Response.json({ error: 'Missing userId or email' }, { status: 400 })
+  }
+  if (auth.user.id !== userId) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   try {

@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 type Msg = { role: 'user'|'assistant'; content: string }
 
 export function FitnessFairyChat() {
-  const { user } = useAuth()
+  const { user, session } = useAuth()
   const [messages, setMessages] = useState<Msg[]>([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
@@ -21,6 +21,10 @@ export function FitnessFairyChat() {
     try {
       const res = await fetch('/api/fitness-fairy', { 
         method: 'POST', 
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+        },
         body: JSON.stringify({ 
           message: userMsg.content,
           userId: user.id 

@@ -45,9 +45,6 @@ export function Header() {
                       <Link href="/onboarding/questionnaire" className="text-gray-300 hover:text-red-500 transition-colors uppercase text-sm font-semibold tracking-wider">
                         Quest
                       </Link>
-                      <Link href="/loot" className="text-gray-300 hover:text-red-500 transition-colors uppercase text-sm font-semibold tracking-wider">
-                        Loot
-                      </Link>
                       <button 
                         onClick={() => signOut()} 
                         className="text-gray-300 hover:text-red-500 transition-colors uppercase text-sm font-semibold tracking-wider"

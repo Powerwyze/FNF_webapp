@@ -1,11 +1,19 @@
 import { NextRequest } from 'next/server'
 import { supabase } from '@/lib/supabaseClient'
+import { requireUser } from '@/lib/serverAuth'
 
 export async function POST(req: NextRequest) {
   const { userId, fileName } = await req.json()
   
   if (!userId || !fileName) {
     return Response.json({ error: 'Missing userId or fileName' }, { status: 400 })
+  }
+  const auth = await requireUser(req)
+  if (!auth.user) {
+    return Response.json({ error: auth.error || 'Unauthorized' }, { status: 401 })
+  }
+  if (auth.user.id !== userId) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   try {
@@ -33,6 +41,13 @@ export async function PUT(req: NextRequest) {
   
   if (!userId || !avatarUrl) {
     return Response.json({ error: 'Missing userId or avatarUrl' }, { status: 400 })
+  }
+  const auth = await requireUser(req)
+  if (!auth.user) {
+    return Response.json({ error: auth.error || 'Unauthorized' }, { status: 401 })
+  }
+  if (auth.user.id !== userId) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   try {

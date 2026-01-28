@@ -8,7 +8,7 @@ export function PopupsList({ popups }: { popups: Popup[] }) {
           <div className="font-medium">{p.title}</div>
           <div className="text-sm text-gray-300">{p.city} — {p.venue}</div>
           <div className="text-sm text-gray-400">{new Date(p.start_at).toLocaleString()}</div>
-          <a href={p.signup_url} className="text-fnf-accent text-sm" target="_blank">Sign up</a>
+          <a href={p.signup_url} className="text-fnf-accent text-sm" target="_blank" rel="noopener noreferrer">Sign up</a>
         </div>
       ))}
     </div>

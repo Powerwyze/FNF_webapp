@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireUser } from '@/lib/serverAuth'
 
 const supabaseAdmin = createClient(
 	process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,6 +15,13 @@ export async function POST(req: NextRequest) {
 
 		if (!userId || !newClass) {
 			return Response.json({ error: 'Missing userId or newClass' }, { status: 400 })
+		}
+		const auth = await requireUser(req)
+		if (!auth.user) {
+			return Response.json({ error: auth.error || 'Unauthorized' }, { status: 401 })
+		}
+		if (auth.user.id !== userId) {
+			return Response.json({ error: 'Forbidden' }, { status: 403 })
 		}
 		if (!ALLOWED.includes(newClass)) {
 			return Response.json({ error: 'Invalid class' }, { status: 400 })

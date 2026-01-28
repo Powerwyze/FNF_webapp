@@ -83,13 +83,13 @@ export default function LandingPage() {
           
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {[
-              { name: 'FIGHTER', color: 'red', desc: 'Aesthetic warrior' },
-              { name: 'ASSASSIN', color: 'purple', desc: 'Agile striker' },
-              { name: 'HEALER', color: 'green', desc: 'Balanced support' },
-              { name: 'TANK', color: 'blue', desc: 'Strength titan' },
-              { name: 'RANGER', color: 'yellow', desc: 'Athletic hunter' }
+              { name: 'FIGHTER', borderClass: 'border-red-500', desc: 'Aesthetic warrior' },
+              { name: 'ASSASSIN', borderClass: 'border-purple-500', desc: 'Agile striker' },
+              { name: 'HEALER', borderClass: 'border-green-500', desc: 'Balanced support' },
+              { name: 'TANK', borderClass: 'border-blue-500', desc: 'Strength titan' },
+              { name: 'RANGER', borderClass: 'border-yellow-500', desc: 'Athletic hunter' }
             ].map((cls) => (
-              <div key={cls.name} className={`glass p-4 text-center rounded-lg border-t-4 border-${cls.color}-500`}>
+              <div key={cls.name} className={`glass p-4 text-center rounded-lg border-t-4 ${cls.borderClass}`}>
                 <h4 className="font-bold title-font text-lg mb-1">{cls.name}</h4>
                 <p className="text-xs text-gray-400">{cls.desc}</p>
               </div>

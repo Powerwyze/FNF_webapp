@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { Header } from '@/components/Header'
 import { supabase } from '@/lib/supabaseClient'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
 
 type Popup = {
   id: string
@@ -97,9 +98,10 @@ export default function AdminPage() {
   }
 
   return (
-    <div>
-      <Header />
-      <div className="glass p-6 rounded-lg">
+    <ProtectedRoute>
+      <div>
+        <Header />
+        <div className="glass p-6 rounded-lg">
         <h1 className="text-2xl font-bold mb-6">Admin - Manage Popups</h1>
         
         <form onSubmit={handleSubmit} className="space-y-4 mb-8">
@@ -207,7 +209,8 @@ export default function AdminPage() {
             </div>
           ))}
         </div>
+        </div>
       </div>
-    </div>
+    </ProtectedRoute>
   )
 }

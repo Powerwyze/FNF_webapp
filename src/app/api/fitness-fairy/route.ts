@@ -1,9 +1,19 @@
 import { NextRequest } from 'next/server'
 import OpenAI from 'openai'
 import { supabase } from '@/lib/supabaseClient'
+import { requireUser } from '@/lib/serverAuth'
 
 export async function POST(req: NextRequest) {
   const { message, userId } = await req.json()
+  if (userId) {
+    const auth = await requireUser(req)
+    if (!auth.user) {
+      return Response.json({ error: auth.error || 'Unauthorized' }, { status: 401 })
+    }
+    if (auth.user.id !== userId) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  }
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
   // Default values if no profile found

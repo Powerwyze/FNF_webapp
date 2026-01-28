@@ -5,7 +5,7 @@ import { QrCard } from '@/components/QrCard'
 import { AvatarUploader } from '@/components/AvatarUploader'
 import { PopupsList } from '@/components/PopupsList'
 import { FitnessFairyChat } from '@/components/FitnessFairyChat'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 
 type Profile = {
@@ -24,13 +24,21 @@ type Profile = {
 }
 
 export function ProfileShell({ profile, onUpdate }: { profile: Profile; onUpdate: () => void }) {
-  const { user } = useAuth()
+  const { user, session } = useAuth()
   const [bio, setBio] = useState(profile.bio || '')
   const [saving, setSaving] = useState(false)
   const [loggingWorkout, setLoggingWorkout] = useState(false)
   const [editingClass, setEditingClass] = useState(false)
   const [selectedClass, setSelectedClass] = useState(profile.class || 'Fighter')
   const [savingClass, setSavingClass] = useState(false)
+
+  useEffect(() => {
+    setBio(profile.bio || '')
+  }, [profile.bio])
+
+  const authHeaders = session?.access_token
+    ? { Authorization: `Bearer ${session.access_token}` }
+    : {}
 
   async function saveBio() {
     if (!user) return
@@ -39,7 +47,7 @@ export function ProfileShell({ profile, onUpdate }: { profile: Profile; onUpdate
     try {
       const response = await fetch('/api/profile/bio', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({ userId: user.id, bio })
       })
       
@@ -60,7 +68,7 @@ export function ProfileShell({ profile, onUpdate }: { profile: Profile; onUpdate
     try {
       const response = await fetch('/api/workout/log', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({ userId: user.id, expGain: 10 })
       })
       
@@ -80,7 +88,7 @@ export function ProfileShell({ profile, onUpdate }: { profile: Profile; onUpdate
     try {
       const res = await fetch('/api/profile/class', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({ userId: user.id, newClass: selectedClass })
       })
       if (!res.ok) throw new Error('Failed to update class')

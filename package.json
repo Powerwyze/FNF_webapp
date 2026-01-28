@@ -10,6 +10,7 @@
     "db:types": "supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > src/types/supabase.ts"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.2.1",
     "@supabase/supabase-js": "^2.45.3",
     "@tanstack/react-query": "^5.51.0",
@@ -18,7 +19,6 @@
     "date-fns": "^3.6.0",
     "lucide-react": "^0.441.0",
     "next": "^14.2.5",
-    "openai": "^4.52.7",
     "postcss": "^8.4.41",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",

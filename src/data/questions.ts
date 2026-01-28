@@ -136,7 +136,7 @@ export function computeClass(weights: Weights): ClassName {
     ['Healer/Mage', weights.generalist_weight],
   ]
   entries.sort((a,b)=> b[1]-a[1])
-  // If tie within 2 points, pick first for now (client-only), tie-break with OpenAI on server later
+  // If tie within 2 points, pick first for now (client-only), tie-break with Gemini on server later
   const top = entries[0]
   const second = entries[1]
   if (second && Math.abs(top[1]-second[1]) <= 2) {

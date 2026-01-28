@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import OpenAI from 'openai'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 import { requireUser } from '@/lib/serverAuth'
 
 // Create admin client for profile operations
@@ -23,9 +23,18 @@ type Weights = {
   generalist_weight: number
 }
 
+async function generateText(prompt: string) {
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) return null
+  const genAI = new GoogleGenerativeAI(apiKey)
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const result = await model.generateContent(prompt)
+  return result.response.text()?.trim() || null
+}
+
 export async function POST(req: NextRequest) {
   const { userId, responses } = await req.json()
-  
+
   if (!userId || !responses) {
     return Response.json({ error: 'Missing userId or responses' }, { status: 400 })
   }
@@ -85,12 +94,9 @@ export async function POST(req: NextRequest) {
 
     const entries = Object.entries(weights).sort((a, b) => b[1] - a[1])
     let className = classMapping[entries[0][0] as keyof Weights]
-    
+
     // Check for tie (within 2 points)
     if (entries[1] && Math.abs(entries[0][1] - entries[1][1]) <= 2) {
-      // Use OpenAI for tie-breaking
-      const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-      
       const tieBreakPrompt = `Based on the following fitness questionnaire responses and scoring, determine the most appropriate class for this user.
 
 Top scoring axes:
@@ -109,33 +115,22 @@ User's responses indicate preferences for both ${entries[0][0].replace('_weight'
 Return only the class name (Fighter, Tank, Assassin, Ranger, or Healer/Mage).`
 
       try {
-        const completion = await client.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: tieBreakPrompt }],
-          max_tokens: 50
-        })
-        const suggestedClass = completion.choices[0]?.message?.content?.trim()
+        const suggestedClass = await generateText(tieBreakPrompt)
         if (suggestedClass && ['Fighter', 'Tank', 'Assassin', 'Ranger', 'Healer/Mage'].includes(suggestedClass)) {
           className = suggestedClass
         }
       } catch (e) {
-        console.error('OpenAI tie-break failed:', e)
+        console.error('Gemini tie-break failed:', e)
       }
     }
 
     // Generate goal summary
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
     let goalSummary = 'Embark on your fitness journey'
-    
+
     try {
       const summaryPrompt = `Create a 1-2 sentence motivating personal goal statement for a ${className} in the Fitness N Fighting program. Their top training priorities are ${entries[0][0].replace('_weight', '')} and ${entries[1][0].replace('_weight', '')}. Keep it inspiring and specific to their class archetype.`
-      
-      const completion = await client.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: summaryPrompt }],
-        max_tokens: 100
-      })
-      goalSummary = completion.choices[0]?.message?.content?.trim() || goalSummary
+      const summary = await generateText(summaryPrompt)
+      goalSummary = summary || goalSummary
     } catch (e) {
       console.error('Goal summary generation failed:', e)
     }
@@ -198,11 +193,9 @@ Return only the class name (Fighter, Tank, Assassin, Ranger, or Healer/Mage).`
     console.error('Questionnaire submission error:', error)
     console.error('User ID:', userId)
     console.error('Responses count:', Object.keys(responses).length)
-    return Response.json({ 
+    return Response.json({
       error: 'Failed to process questionnaire',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
 }
-
-

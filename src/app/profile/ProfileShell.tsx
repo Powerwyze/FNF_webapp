@@ -36,7 +36,7 @@ export function ProfileShell({ profile, onUpdate }: { profile: Profile; onUpdate
     setBio(profile.bio || '')
   }, [profile.bio])
 
-  const authHeaders = session?.access_token
+  const authHeaders: Record<string, string> = session?.access_token
     ? { Authorization: `Bearer ${session.access_token}` }
     : {}
 

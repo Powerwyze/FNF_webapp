@@ -19,11 +19,14 @@ export function FitnessFairyChat() {
     setInput('')
     
     try {
+      const authHeaders: Record<string, string> = session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : {}
       const res = await fetch('/api/fitness-fairy', { 
         method: 'POST', 
         headers: {
           'Content-Type': 'application/json',
-          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+          ...authHeaders
         },
         body: JSON.stringify({ 
           message: userMsg.content,

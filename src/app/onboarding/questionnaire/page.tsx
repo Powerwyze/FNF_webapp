@@ -116,11 +116,14 @@ export default function QuestionnairePage() {
       await saveAnswers()
       
       // Submit for class assignment
+      const authHeaders: Record<string, string> = session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : {}
       const response = await fetch('/api/questionnaire/submit', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+          ...authHeaders
         },
         body: JSON.stringify({ userId: user.id, responses: answers })
       })

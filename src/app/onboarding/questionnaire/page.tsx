@@ -26,6 +26,7 @@ export default function QuestionnairePage() {
   const slice = questions.slice(page * questionsPerPage, (page + 1) * questionsPerPage)
   const progress = Object.keys(answers).length
   const total = questions.length
+  const pageComplete = slice.every(q => answers[q.id])
 
   useEffect(() => {
     loadQuestions()
@@ -198,7 +199,7 @@ export default function QuestionnairePage() {
                 Page {page + 1} of {maxPage + 1}
               </span>
               <button 
-                disabled={page === maxPage} 
+                disabled={page === maxPage || !pageComplete} 
                 onClick={() => {
                   setPage(p => p + 1)
                   // Scroll to top for next questions
@@ -266,7 +267,7 @@ export default function QuestionnairePage() {
                 Page {page + 1} of {maxPage + 1}
               </span>
               <button 
-                disabled={page === maxPage} 
+                disabled={page === maxPage || !pageComplete} 
                 onClick={() => {
                   setPage(p => p + 1)
                   // Scroll to top for next questions

@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         id: userId,
         email,
         display_name: email.split('@')[0], // Default display name from email
-        bio: 'New challenger entering the arena.'
+        bio: 'New hero entering the guild.'
       })
 
     if (error) throw error

@@ -1,4 +1,4 @@
--- Fun, Goal-Focused Warrior Assessment Questions
+-- Fun, Goal-Focused Hero Assessment Questions
 -- Replace the existing questions with these more engaging ones
 
 -- Clear existing questions

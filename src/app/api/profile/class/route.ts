@@ -7,7 +7,7 @@ const supabaseAdmin = createClient(
 	process.env.SUPABASE_SERVICE_KEY!
 )
 
-const ALLOWED = ['Fighter', 'Assassin', 'Healer/Mage', 'Tank', 'Ranger'] as const
+const ALLOWED = ['Fighter', 'Archer', 'Wizard', 'Cleric'] as const
 
 export async function POST(req: NextRequest) {
 	try {
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 		}
 
 		const rank = existing.rank || 'E'
-		const qr_payload = `Class: ${newClass} | Rank: ${rank}`
+		const qr_payload = `PXH|class=${newClass}|rank=${rank}`
 
 		const { error: updateErr } = await supabaseAdmin
 			.from('profiles')

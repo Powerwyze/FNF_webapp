@@ -3,8 +3,8 @@ import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 
 export const metadata: Metadata = {
-  title: 'Fitness N Fighting',
-  description: 'Onboarding for FNF',
+  title: 'Project X Hero',
+  description: 'Hero onboarding and questing for Project X Hero',
 }
 
 export default function RootLayout({
@@ -14,7 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-black">
+      <body className="min-h-screen">
         <AuthProvider>
           {children}
         </AuthProvider>

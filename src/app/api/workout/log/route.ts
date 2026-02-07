@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
         rank: newRank,
         rank_locked_until: rankLockedUntil,
         last_workout_at: new Date().toISOString(),
-        qr_payload: `FNF|class=${profile.class || 'Tank'}|rank=${newRank}`
+        qr_payload: `PXH|class=${profile.class || 'Fighter'}|rank=${newRank}`
       })
       .eq('id', userId)
 

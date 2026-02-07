@@ -12,7 +12,7 @@ type Profile = {
   id: string
   email: string
   display_name: string
-  class: 'Fighter'|'Assassin'|'Healer/Mage'|'Tank'|'Ranger' | null
+  class: 'Fighter'|'Archer'|'Wizard'|'Cleric' | null
   rank: 'E'|'D'|'C'|'B'|'A'|'S'
   exp: number
   rank_locked_until: string | null
@@ -129,10 +129,9 @@ export function ProfileShell({ profile, onUpdate }: { profile: Profile; onUpdate
                 className="bg-black/50 border border-gray-700 rounded px-3 py-2"
               >
                 <option value="Fighter">Fighter</option>
-                <option value="Assassin">Assassin</option>
-                <option value="Healer/Mage">Healer/Mage</option>
-                <option value="Tank">Tank</option>
-                <option value="Ranger">Ranger</option>
+                <option value="Archer">Archer</option>
+                <option value="Wizard">Wizard</option>
+                <option value="Cleric">Cleric</option>
               </select>
               <button onClick={saveClass} disabled={savingClass} className="btn-primary text-sm disabled:opacity-50">
                 {savingClass ? 'Saving...' : 'Save'}
@@ -148,23 +147,23 @@ export function ProfileShell({ profile, onUpdate }: { profile: Profile; onUpdate
           <div className="text-sm text-gray-400 uppercase tracking-wider">Total EXP</div>
         </div>
         <ExpBar exp={profile.exp} />
-        <QrCard payload={`Class: ${profile.class ?? 'Unassigned'} | Rank: ${profile.rank}`} />
+        <QrCard payload={`PXH|class=${profile.class ?? 'Unassigned'}|rank=${profile.rank}`} />
         {profile.goal_summary && (
           <div className="p-3 bg-black/30 rounded border border-gray-700">
-            <div className="text-xs uppercase tracking-wider text-gray-400 mb-1">Goal</div>
+            <div className="text-xs uppercase tracking-wider text-gray-400 mb-1">Quest Focus</div>
             <div className="text-sm">{profile.goal_summary}</div>
           </div>
         )}
       </aside>
       
       <main className="lg:col-span-1 glass rounded-lg p-6 space-y-3">
-        <div className="text-lg font-semibold">Character Bio</div>
+        <div className="text-lg font-semibold">Hero Bio</div>
         <AvatarUploader avatarUrl={profile.avatar_url ?? undefined} />
         <textarea 
           value={bio} 
           onChange={(e) => setBio(e.target.value)}
           className="w-full h-40 bg-transparent border border-gray-700 rounded p-3" 
-          placeholder="Tell us about your warrior..."
+          placeholder="Tell us about your hero..."
         />
         <div className="flex gap-2">
           <button 

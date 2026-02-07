@@ -1,14 +1,12 @@
 -- Seed classes
 insert into public.classes (name, description, workouts) values
-  ('Fighter','Goal: lose weight & gain muscular physique','Free weights & machines') on conflict (name) do nothing;
+  ('Fighter','Goal: strength and physique','Free weights & machines') on conflict (name) do nothing;
 insert into public.classes (name, description, workouts) values
-  ('Assassin','Goal: flexibility, balance, endurance','Calisthenics & HIIT') on conflict (name) do nothing;
+  ('Archer','Goal: athletic performance and conditioning','Explosive/cardio/athletic') on conflict (name) do nothing;
 insert into public.classes (name, description, workouts) values
-  ('Healer/Mage','Goal: well-rounded fitness','Varied styles, frequent switches') on conflict (name) do nothing;
+  ('Wizard','Goal: mobility, skill, and technique','Calisthenics & mobility flows') on conflict (name) do nothing;
 insert into public.classes (name, description, workouts) values
-  ('Tank','Goal: bodybuilder/powerlifter strength','Muscle endurance & powerlifting') on conflict (name) do nothing;
-insert into public.classes (name, description, workouts) values
-  ('Ranger','Goal: athletic performance & endurance','Explosive/cardio/athletic') on conflict (name) do nothing;
+  ('Cleric','Goal: balanced, well-rounded fitness','Varied styles, steady progression') on conflict (name) do nothing;
 
 -- Full 25 questionnaire questions with weight mappings
 insert into public.questionnaire_questions (slug, prompt, choices, weight_keys, order_index) values

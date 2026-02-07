@@ -149,7 +149,7 @@ export default function QuestionnairePage() {
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-            <p className="text-gray-400">Loading warrior assessment...</p>
+            <p className="text-gray-400">Loading hero assessment...</p>
           </div>
         </div>
       </ProtectedRoute>
@@ -166,10 +166,10 @@ export default function QuestionnairePage() {
             <div className="text-center mb-6">
               <h1 className="text-3xl font-bold title-font mb-2">
                 <span className="bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
-                  WARRIOR CLASS ASSESSMENT
+                  HERO CLASS ASSESSMENT
                 </span>
               </h1>
-              <p className="text-gray-400">Answer 25 questions to discover your warrior class</p>
+              <p className="text-gray-400">Answer 25 questions to discover your hero class</p>
             </div>
             
             {/* Progress Bar */}
@@ -298,7 +298,7 @@ export default function QuestionnairePage() {
             
             {progress < total && (
               <div className="text-center mt-4 text-gray-400">
-                Complete all {total} questions to discover your warrior class
+                Complete all {total} questions to discover your hero class
               </div>
             )}
           </div>

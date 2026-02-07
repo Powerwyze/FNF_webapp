@@ -47,8 +47,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await supabase.from('profiles').insert({
               id: session.user.id,
               email: session.user.email,
-              display_name: session.user.email?.split('@')[0] || 'Warrior',
-              bio: 'New challenger entering the arena.'
+              display_name: session.user.email?.split('@')[0] || 'Hero',
+              bio: 'New hero entering the guild.'
             })
           }
         }

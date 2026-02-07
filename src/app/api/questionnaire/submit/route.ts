@@ -84,39 +84,37 @@ export async function POST(req: NextRequest) {
     }
 
     // Determine class
-    const classMapping: Record<keyof Weights, string> = {
-      aesthetics_weight: 'Fighter',
-      strength_weight: 'Tank',
-      mobility_weight: 'Assassin',
-      athletic_weight: 'Ranger',
-      generalist_weight: 'Healer/Mage'
+    const classScores: Record<string, number> = {
+      Fighter: weights.aesthetics_weight + weights.strength_weight,
+      Archer: weights.athletic_weight,
+      Wizard: weights.mobility_weight,
+      Cleric: weights.generalist_weight
     }
 
-    const entries = Object.entries(weights).sort((a, b) => b[1] - a[1])
-    let className = classMapping[entries[0][0] as keyof Weights]
+    const entries = Object.entries(classScores).sort((a, b) => b[1] - a[1])
+    let className = entries[0][0]
 
     // Check for tie (within 2 points)
     if (entries[1] && Math.abs(entries[0][1] - entries[1][1]) <= 2) {
-      const tieBreakPrompt = `Based on the following fitness questionnaire responses and scoring, determine the most appropriate class for this user.
+      const tieBreakPrompt = `Based on the following Project X Hero questionnaire scoring, determine the most appropriate class for this user.
 
-Top scoring axes:
-1. ${entries[0][0].replace('_weight', '')}: ${entries[0][1]} points
-2. ${entries[1][0].replace('_weight', '')}: ${entries[1][1]} points
+Top scoring classes:
+1. ${entries[0][0]}: ${entries[0][1]} points
+2. ${entries[1][0]}: ${entries[1][1]} points
 
 Classes:
-- Fighter: aesthetics-focused, lose weight & gain muscular physique
-- Tank: strength-focused, bodybuilder/powerlifter strength
-- Assassin: mobility-focused, flexibility, balance, endurance
-- Ranger: athletic-focused, athletic performance & endurance
-- Healer/Mage: generalist, well-rounded fitness
+- Fighter: strength and physique focus
+- Archer: athletic performance and conditioning
+- Wizard: mobility, skill, and technique focus
+- Cleric: balanced, well-rounded fitness
 
-User's responses indicate preferences for both ${entries[0][0].replace('_weight', '')} and ${entries[1][0].replace('_weight', '')} training styles.
+User's responses indicate preferences for both ${entries[0][0]} and ${entries[1][0]} training styles.
 
-Return only the class name (Fighter, Tank, Assassin, Ranger, or Healer/Mage).`
+Return only the class name (Fighter, Archer, Wizard, or Cleric).`
 
       try {
         const suggestedClass = await generateText(tieBreakPrompt)
-        if (suggestedClass && ['Fighter', 'Tank', 'Assassin', 'Ranger', 'Healer/Mage'].includes(suggestedClass)) {
+        if (suggestedClass && ['Fighter', 'Archer', 'Wizard', 'Cleric'].includes(suggestedClass)) {
           className = suggestedClass
         }
       } catch (e) {
@@ -128,7 +126,7 @@ Return only the class name (Fighter, Tank, Assassin, Ranger, or Healer/Mage).`
     let goalSummary = 'Embark on your fitness journey'
 
     try {
-      const summaryPrompt = `Create a 1-2 sentence motivating personal goal statement for a ${className} in the Fitness N Fighting program. Their top training priorities are ${entries[0][0].replace('_weight', '')} and ${entries[1][0].replace('_weight', '')}. Keep it inspiring and specific to their class archetype.`
+      const summaryPrompt = `Create a 1-2 sentence motivating personal goal statement for a ${className} in Project X Hero. Their top training priorities are ${entries[0][0]} and ${entries[1][0]}. Keep it inspiring and specific to their class archetype.`
       const summary = await generateText(summaryPrompt)
       goalSummary = summary || goalSummary
     } catch (e) {
@@ -138,7 +136,7 @@ Return only the class name (Fighter, Tank, Assassin, Ranger, or Healer/Mage).`
     // Create or update profile
     const now = new Date()
     const rankLockedUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 days
-    const qrPayload = `FNF|class=${className}|rank=E`
+    const qrPayload = `PXH|class=${className}|rank=E`
 
     // First check if profile exists
     const { data: existingProfile } = await supabaseAdmin

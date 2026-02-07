@@ -10,7 +10,7 @@ type Profile = {
   id: string
   email: string
   display_name: string
-  class: 'Fighter' | 'Assassin' | 'Healer/Mage' | 'Tank' | 'Ranger' | null
+  class: 'Fighter' | 'Archer' | 'Wizard' | 'Cleric' | null
   rank: 'E' | 'D' | 'C' | 'B' | 'A' | 'S'
   exp: number
   rank_locked_until: string | null
@@ -76,8 +76,8 @@ export default function ProfilePage() {
         .insert({
           id: user.id,
           email: fallbackEmail,
-          display_name: fallbackEmail.split('@')[0] || 'Warrior',
-          bio: 'New challenger entering the arena.',
+          display_name: fallbackEmail.split('@')[0] || 'Hero',
+          bio: 'New hero entering the guild.',
           rank: 'E',
           exp: 0
         })
@@ -100,10 +100,10 @@ export default function ProfilePage() {
           <div className="text-center">
             <div className="text-4xl font-bold title-font mb-4">
               <span className="bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
-                Loading Your Warrior Profile...
+                Loading Your Hero Profile...
               </span>
             </div>
-            <div className="text-gray-400 mb-8">Preparing your character sheet</div>
+            <div className="text-gray-400 mb-8">Preparing your hero sheet</div>
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
           </div>
         </div>
@@ -122,13 +122,13 @@ export default function ProfilePage() {
                 Profile Not Found
               </span>
             </div>
-            <div className="text-gray-400 mb-8">Complete the questionnaire to create your warrior profile</div>
+            <div className="text-gray-400 mb-8">Complete the assessment to create your hero profile</div>
             <div className="flex gap-4 justify-center">
               <button 
                 onClick={() => router.push('/onboarding/questionnaire')} 
                 className="btn-primary text-lg px-8 py-3"
               >
-                🚀 Start Questionnaire
+                🚀 Start Assessment
               </button>
               <button 
                 onClick={loadProfile} 

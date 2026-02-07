@@ -64,7 +64,7 @@ Deno.serve(async (_req) => {
           exp: newExp, 
           rank: newRank,
           qr_payload: supabase.rpc('concat_strings', { 
-            str1: 'FNF|class=', 
+            str1: 'PXH|class=', 
             str2: supabase.rpc('get_profile_class', { profile_id: profile.id }),
             str3: '|rank=',
             str4: newRank

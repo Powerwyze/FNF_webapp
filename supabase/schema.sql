@@ -6,7 +6,7 @@ create table if not exists public.profiles (
   id uuid primary key,
   email text,
   display_name text,
-  class text check (class in ('Fighter','Assassin','Healer/Mage','Tank','Ranger')),
+  class text check (class in ('Fighter','Archer','Wizard','Cleric')),
   rank text not null default 'E' check (rank in ('E','D','C','B','A','S')),
   exp integer not null default 0,
   rank_locked_until timestamptz,

@@ -6,25 +6,20 @@ const classConfig: Record<string, { gradient: string; border: string; icon: stri
     border: 'border-red-500',
     icon: '⚔️'
   },
-  Assassin: { 
-    gradient: 'from-purple-600 to-purple-800', 
-    border: 'border-purple-500',
-    icon: '🗡️'
-  },
-  'Healer/Mage': { 
-    gradient: 'from-green-600 to-green-800', 
-    border: 'border-green-500',
-    icon: '✨'
-  },
-  Tank: { 
-    gradient: 'from-blue-600 to-blue-800', 
-    border: 'border-blue-500',
-    icon: '🛡️'
-  },
-  Ranger: { 
-    gradient: 'from-yellow-600 to-yellow-800', 
-    border: 'border-yellow-500',
+  Archer: { 
+    gradient: 'from-amber-500 to-amber-700', 
+    border: 'border-amber-400',
     icon: '🏹'
+  },
+  Wizard: { 
+    gradient: 'from-purple-600 to-indigo-700', 
+    border: 'border-purple-500',
+    icon: '🪄'
+  },
+  Cleric: { 
+    gradient: 'from-emerald-500 to-emerald-700', 
+    border: 'border-emerald-400',
+    icon: '✨'
   }
 }
 

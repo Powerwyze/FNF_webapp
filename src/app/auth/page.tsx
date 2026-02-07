@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -54,7 +54,7 @@ export default function AuthPage() {
         <div className="max-w-md mx-auto">
           <h1 className="text-4xl font-bold text-center mb-8 title-font">
             <span className="bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
-              {mode === 'signup' ? 'CREATE YOUR WARRIOR' : 'ENTER THE ARENA'}
+              {mode === 'signup' ? 'CREATE YOUR HERO' : 'ENTER THE GUILD'}
             </span>
           </h1>
 
@@ -95,7 +95,7 @@ export default function AuthPage() {
                 <input
                   className="w-full px-4 py-3 bg-black/50 border border-gray-700 rounded focus:border-red-600 focus:outline-none transition-colors"
                   type="email"
-                  placeholder="warrior@example.com"
+                  placeholder="hero@example.com"
                   {...register('email')}
                 />
                 {errors.email && (
@@ -117,7 +117,7 @@ export default function AuthPage() {
                   <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
                 )}
                 <p className="text-xs text-gray-500 mt-2">
-                  Minimum 6 characters to protect your warrior's identity
+                  Minimum 6 characters to protect your hero's identity
                 </p>
               </div>
 
@@ -125,7 +125,7 @@ export default function AuthPage() {
                 disabled={isSubmitting}
                 className="w-full btn-primary mt-6"
               >
-                {mode === 'signup' ? 'CREATE ACCOUNT' : 'ENTER ARENA'}
+                {mode === 'signup' ? 'CREATE ACCOUNT' : 'ENTER GUILD'}
               </button>
             </form>
 

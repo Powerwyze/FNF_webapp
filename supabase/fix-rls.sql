@@ -25,7 +25,7 @@ ALTER TABLE public.profiles
 ADD CONSTRAINT profiles_id_fkey 
 FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
--- Fun, Goal-Focused Warrior Assessment Questions
+-- Fun, Goal-Focused Hero Assessment Questions
 DELETE FROM public.questionnaire_questions;
 
 INSERT INTO public.questionnaire_questions (slug, prompt, choices, weight_keys, order_index) VALUES

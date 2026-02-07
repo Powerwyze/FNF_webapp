@@ -125,15 +125,14 @@ export const WEIGHT_MAP: Record<number, Record<string, Partial<Weights>>> = {
   25:{ A:{aesthetics_weight:1}, B:{strength_weight:2}, C:{mobility_weight:2}, D:{athletic_weight:2}, E:{generalist_weight:2} },
 }
 
-export type ClassName = 'Fighter'|'Assassin'|'Healer/Mage'|'Tank'|'Ranger'
+export type ClassName = 'Fighter'|'Archer'|'Wizard'|'Cleric'
 
 export function computeClass(weights: Weights): ClassName {
   const entries: Array<[ClassName, number]> = [
-    ['Fighter', weights.aesthetics_weight],
-    ['Tank', weights.strength_weight],
-    ['Assassin', weights.mobility_weight],
-    ['Ranger', weights.athletic_weight],
-    ['Healer/Mage', weights.generalist_weight],
+    ['Fighter', weights.aesthetics_weight + weights.strength_weight],
+    ['Archer', weights.athletic_weight],
+    ['Wizard', weights.mobility_weight],
+    ['Cleric', weights.generalist_weight],
   ]
   entries.sort((a,b)=> b[1]-a[1])
   // If tie within 2 points, pick first for now (client-only), tie-break with Gemini on server later

@@ -16,14 +16,14 @@ export default function LandingPage() {
           <div className="relative inline-block mb-8">
             <h1 className="text-6xl md:text-8xl font-bold title-font">
               <span className="bg-gradient-to-r from-red-600 via-orange-600 to-yellow-500 bg-clip-text text-transparent">
-                ENTER THE ARENA
+                ENTER THE GUILD
               </span>
             </h1>
             <div className="absolute -inset-4 bg-red-600/20 blur-3xl -z-10" />
           </div>
           
           <p className="text-xl md:text-2xl text-gray-300 mb-8 accent-font max-w-3xl mx-auto">
-            Transform your fitness journey into an epic adventure. Choose your class, level up through real workouts, and conquer challenges alongside fellow warriors.
+            Transform your fitness journey into an epic adventure. Choose your class, level up through real workouts, and conquer quests alongside fellow heroes.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -32,8 +32,8 @@ export default function LandingPage() {
                 <Link href="/profile" className="btn-primary text-lg">
                   VIEW YOUR PROFILE
                 </Link>
-                <Link href="/onboarding/questionnaire" className="btn-secondary text-lg">
-                  COMPLETE QUEST
+                <Link href="/quest-gallery" className="btn-secondary text-lg">
+                  ENTER QUEST GALLERY
                 </Link>
               </>
             ) : (
@@ -42,7 +42,7 @@ export default function LandingPage() {
                   BEGIN YOUR QUEST
                 </Link>
                 <Link href="/onboarding/questionnaire" className="btn-secondary text-lg">
-                  PREVIEW QUESTIONNAIRE
+                  PREVIEW CLASS ASSESSMENT
                 </Link>
               </>
             )}
@@ -54,7 +54,7 @@ export default function LandingPage() {
           <div className="glass p-6 rounded-lg border-l-4 border-red-600 hover:border-orange-600 transition-colors">
             <h3 className="text-2xl font-bold mb-3 title-font text-red-500">CHOOSE YOUR CLASS</h3>
             <p className="text-gray-300">
-              Complete our 25-question assessment to be assigned one of five unique classes: Fighter, Assassin, Healer/Mage, Tank, or Ranger.
+              Complete our 25-question assessment to be assigned one of four classes: Fighter, Archer, Wizard, or Cleric.
             </p>
           </div>
           
@@ -77,17 +77,16 @@ export default function LandingPage() {
         <section className="mb-16">
           <h2 className="text-4xl font-bold text-center mb-8 title-font">
             <span className="bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
-              WARRIOR CLASSES
+              HERO CLASSES
             </span>
           </h2>
           
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { name: 'FIGHTER', borderClass: 'border-red-500', desc: 'Aesthetic warrior' },
-              { name: 'ASSASSIN', borderClass: 'border-purple-500', desc: 'Agile striker' },
-              { name: 'HEALER', borderClass: 'border-green-500', desc: 'Balanced support' },
-              { name: 'TANK', borderClass: 'border-blue-500', desc: 'Strength titan' },
-              { name: 'RANGER', borderClass: 'border-yellow-500', desc: 'Athletic hunter' }
+              { name: 'FIGHTER', borderClass: 'border-red-500', desc: 'Strength and physique' },
+              { name: 'ARCHER', borderClass: 'border-amber-400', desc: 'Athletic precision' },
+              { name: 'WIZARD', borderClass: 'border-purple-500', desc: 'Mobility and skill' },
+              { name: 'CLERIC', borderClass: 'border-emerald-400', desc: 'Balanced support' }
             ].map((cls) => (
               <div key={cls.name} className={`glass p-4 text-center rounded-lg border-t-4 ${cls.borderClass}`}>
                 <h4 className="font-bold title-font text-lg mb-1">{cls.name}</h4>
@@ -105,7 +104,7 @@ export default function LandingPage() {
               READY TO TRANSFORM?
             </h2>
             <p className="text-xl text-gray-300 mb-8 relative z-10">
-              Join the FNF community and start your legendary fitness journey today.
+              Join Project X Hero and start your legendary fitness journey today.
             </p>
             {user ? (
               <Link href="/profile" className="btn-primary text-xl relative z-10">
@@ -113,7 +112,7 @@ export default function LandingPage() {
               </Link>
             ) : (
               <Link href="/auth" className="btn-primary text-xl relative z-10">
-                CREATE YOUR CHARACTER
+                CREATE YOUR HERO
               </Link>
             )}
           </div>

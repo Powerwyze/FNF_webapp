@@ -51,7 +51,7 @@ export default function IntakePage() {
           primary_goal: form.primary_goal,
           current_activity_level: form.current_activity_level,
           preferred_training_time: form.preferred_training_time,
-          bio: `Warrior Name: ${form.warrior_name}\nAge: ${form.age}\nExperience: ${form.fitness_experience}\nGoal: ${form.primary_goal}`
+          bio: `Hero Name: ${form.warrior_name}\nAge: ${form.age}\nExperience: ${form.fitness_experience}\nGoal: ${form.primary_goal}`
         })
         .eq('id', user.id)
 
@@ -80,7 +80,7 @@ export default function IntakePage() {
             <div className="text-center mb-8">
               <h1 className="text-4xl font-bold title-font mb-4">
                 <span className="bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
-                  WELCOME WARRIOR
+                  WELCOME HERO
                 </span>
               </h1>
               <p className="text-xl text-gray-300">
@@ -138,18 +138,18 @@ export default function IntakePage() {
 
                 <div>
                   <label className="block text-sm font-semibold uppercase tracking-wider mb-2 text-gray-300">
-                    🗡️ Warrior Name
+                    🗡️ Hero Name
                   </label>
                   <input
                     type="text"
                     value={form.warrior_name}
                     onChange={(e) => updateForm('warrior_name', e.target.value)}
                     className="w-full px-4 py-3 bg-black/50 border border-gray-700 rounded focus:border-red-600 focus:outline-none transition-colors"
-                    placeholder="Choose your warrior identity"
+                      placeholder="Choose your hero identity"
                     required
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    This will be your legendary name in the arena
+                    This will be your legendary name in the guild
                   </p>
                 </div>
 
@@ -219,7 +219,7 @@ export default function IntakePage() {
                       <option value="morning">🌅 Morning - Start the day strong</option>
                       <option value="afternoon">☀️ Afternoon - Midday energy</option>
                       <option value="evening">🌆 Evening - Unwind with exercise</option>
-                      <option value="night">🌙 Night - Late night warrior</option>
+                      <option value="night">🌙 Night - Late night hero</option>
                       <option value="flexible">🔄 Flexible - Whenever works</option>
                     </select>
                   </div>
@@ -236,7 +236,7 @@ export default function IntakePage() {
                   {submitting ? '⚡ Processing...' : '🚀 Begin Your Quest'}
                 </button>
                 <p className="text-sm text-gray-400 mt-3">
-                  Next: Complete the 25-question warrior assessment
+                  Next: Complete the 25-question hero assessment
                 </p>
               </div>
             </form>

@@ -5,28 +5,29 @@
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  /* FNF Brand Colors - Based on Logo */
+  /* Project X Hero Brand Colors */
   --fnf-red: #DC2626;
   --fnf-orange: #EA580C;
   --fnf-yellow: #FCD34D;
-  --fnf-black: #000000;
-  --fnf-dark-gray: #1F1F1F;
-  --fnf-gray: #374151;
+  --fnf-black: #0B0B0B;
+  --fnf-dark-gray: #141414;
+  --fnf-gray: #2B2B2B;
   --fnf-light-gray: #6B7280;
   --fnf-accent: #DC2626;
   
   /* Gradients */
   --fnf-gradient: linear-gradient(135deg, #DC2626 0%, #EA580C 50%, #FCD34D 100%);
-  --fnf-dark-gradient: linear-gradient(180deg, #000000 0%, #1F1F1F 100%);
+  --fnf-dark-gradient: linear-gradient(180deg, #0B0B0B 0%, #141414 100%);
 }
 
 html, body {
-  @apply bg-black text-white;
+  @apply text-white;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--fnf-black);
   background-image: 
-    radial-gradient(circle at 20% 50%, rgba(220, 38, 38, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(234, 88, 12, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 40% 20%, rgba(252, 211, 77, 0.05) 0%, transparent 50%);
+    radial-gradient(circle at 20% 50%, rgba(220, 38, 38, 0.08) 0%, transparent 55%),
+    radial-gradient(circle at 80% 80%, rgba(234, 88, 12, 0.06) 0%, transparent 60%),
+    radial-gradient(circle at 40% 20%, rgba(252, 211, 77, 0.04) 0%, transparent 60%);
 }
 
 /* Typography */
@@ -97,21 +98,17 @@ h1, h2, h3, h4, h5, h6 {
   --class-color: #DC2626; 
   --class-gradient: linear-gradient(135deg, #DC2626, #EF4444);
 }
-.class-assassin { 
+.class-archer { 
+  --class-color: #F59E0B; 
+  --class-gradient: linear-gradient(135deg, #F59E0B, #FCD34D);
+}
+.class-wizard { 
   --class-color: #7C3AED; 
   --class-gradient: linear-gradient(135deg, #7C3AED, #A78BFA);
 }
-.class-healer { 
+.class-cleric { 
   --class-color: #10B981; 
   --class-gradient: linear-gradient(135deg, #10B981, #34D399);
-}
-.class-tank { 
-  --class-color: #3B82F6; 
-  --class-gradient: linear-gradient(135deg, #3B82F6, #60A5FA);
-}
-.class-ranger { 
-  --class-color: #F59E0B; 
-  --class-gradient: linear-gradient(135deg, #F59E0B, #FCD34D);
 }
 
 /* Rank badges */

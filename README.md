@@ -1,4 +1,4 @@
-Fitness N Fighting (FNF) – Onboarding App
+Project X Hero – Onboarding App
 
 Prereqs: Node 18+, npm.
 
@@ -22,6 +22,6 @@ npm install
 npm run dev
 ```
 
-Branding uses `public/FNFLogo.png`. UI-first scaffold includes landing, auth, questionnaire, and profile with QR, components, and a minimal Fitness Fairy API.
+Branding currently uses `public/FNFLogo.png` as a placeholder. UI-first scaffold includes landing, auth, class assessment, quest gallery, and profile with QR, components, and a minimal Fitness Fairy API.
 
 

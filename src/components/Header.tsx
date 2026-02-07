@@ -15,7 +15,7 @@ export function Header() {
               <div className="relative">
                 <Image 
                   src="/FNFLogo.png" 
-                  alt="FNF" 
+                  alt="Project X Hero" 
                   width={60} 
                   height={60} 
                   className="relative z-10 group-hover:scale-110 transition-transform duration-300" 
@@ -23,10 +23,10 @@ export function Header() {
               </div>
               <div>
                 <h1 className="text-4xl font-bold title-font bg-gradient-to-r from-red-600 via-orange-600 to-yellow-500 bg-clip-text text-transparent">
-                  FITNESS N FIGHTING
+                  PROJECT X HERO
                 </h1>
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400 accent-font">
-                  Level Up Your Fitness Journey
+                  Forge The Golden Age Of Heroes
                 </p>
                 <p className="text-xs uppercase tracking-[0.2em] text-gray-500 accent-font">
                   Powered By Fitness In Fandom
@@ -42,8 +42,11 @@ export function Header() {
                       <Link href="/profile" className="text-gray-300 hover:text-red-500 transition-colors uppercase text-sm font-semibold tracking-wider">
                         Profile
                       </Link>
+                      <Link href="/quest-gallery" className="text-gray-300 hover:text-red-500 transition-colors uppercase text-sm font-semibold tracking-wider">
+                        Quest Gallery
+                      </Link>
                       <Link href="/onboarding/questionnaire" className="text-gray-300 hover:text-red-500 transition-colors uppercase text-sm font-semibold tracking-wider">
-                        Quest
+                        Class Assessment
                       </Link>
                       <button 
                         onClick={() => signOut()} 
@@ -54,7 +57,7 @@ export function Header() {
                     </>
                   ) : (
                     <Link href="/auth" className="btn-primary text-sm">
-                      Enter Arena
+                      Enter Guild
                     </Link>
                   )}
                 </>

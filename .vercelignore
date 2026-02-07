@@ -1,0 +1,12 @@
+# Local/development artifacts
+FNF_dev
+.claude
+.mcp.json
+FiF_PXH Site Notes.pdf
+
+# Build/cache
+.next
+node_modules
+
+# VCS / local config
+.git

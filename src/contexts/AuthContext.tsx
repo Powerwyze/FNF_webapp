@@ -21,41 +21,80 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    let isMounted = true
+
+    const initializeAuth = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession()
+        if (error) {
+          console.error('Error getting initial session:', error)
+        }
+        if (!isMounted) return
+        setSession(data.session ?? null)
+        setUser(data.session?.user ?? null)
+      } catch (error) {
+        console.error('Auth initialization failed:', error)
+        if (!isMounted) return
+        setSession(null)
+        setUser(null)
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    initializeAuth()
+
+    const ensureProfile = async (currentUser: User) => {
+      try {
+        // Create profile if it doesn't exist
+        const { data: existingProfile, error } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', currentUser.id)
+          .maybeSingle()
+
+        if (error) {
+          console.error('Error checking profile:', error)
+          return
+        }
+
+        if (!existingProfile) {
+          const { error: insertError } = await supabase.from('profiles').insert({
+            id: currentUser.id,
+            email: currentUser.email,
+            display_name: currentUser.email?.split('@')[0] || 'Hero',
+            bio: 'New hero entering the guild.'
+          })
+
+          if (insertError) {
+            console.error('Error creating profile:', insertError)
+          }
+        }
+      } catch (error) {
+        console.error('Error ensuring profile:', error)
+      }
+    }
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
+        if (!isMounted) return
         setSession(session)
         setUser(session?.user ?? null)
         setLoading(false)
 
         if (event === 'SIGNED_IN' && session?.user) {
-          // Create profile if it doesn't exist
-          const { data: existingProfile } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', session.user.id)
-            .maybeSingle()
-
-          if (!existingProfile) {
-            await supabase.from('profiles').insert({
-              id: session.user.id,
-              email: session.user.email,
-              display_name: session.user.email?.split('@')[0] || 'Hero',
-              bio: 'New hero entering the guild.'
-            })
-          }
+          void ensureProfile(session.user)
         }
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      isMounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signUp = async (email: string, password: string) => {

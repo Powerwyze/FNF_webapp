@@ -56,6 +56,10 @@ export default function ProfilePage() {
         console.log('Profile not found, creating default profile...')
         await createDefaultProfile()
       } else {
+        if (!data.class) {
+          router.replace('/onboarding/questionnaire')
+          return
+        }
         console.log('Profile loaded:', data)
         setProfile(data)
       }
@@ -86,7 +90,7 @@ export default function ProfilePage() {
 
       if (error) throw error
       console.log('Default profile created:', data)
-      setProfile(data)
+      router.replace('/onboarding/questionnaire')
     } catch (error) {
       console.error('Error creating default profile:', error)
     }
@@ -150,5 +154,3 @@ export default function ProfilePage() {
     </div>
   )
 }
-
-

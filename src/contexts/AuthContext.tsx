@@ -9,6 +9,7 @@ type AuthContextType = {
   loading: boolean
   signUp: (email: string, password: string) => Promise<{ error: any }>
   signIn: (email: string, password: string) => Promise<{ error: any }>
+  signInAsGuest: () => Promise<{ error: any }>
   signOut: () => Promise<void>
   updateProfile: (updates: any) => Promise<{ error: any }>
 }
@@ -117,6 +118,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut()
   }
 
+  const signInAsGuest = async () => {
+    const { error } = await supabase.auth.signInAnonymously()
+    return { error }
+  }
+
   const updateProfile = async (updates: any) => {
     if (!user) return { error: 'No user logged in' }
     
@@ -134,6 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     signUp,
     signIn,
+    signInAsGuest,
     signOut,
     updateProfile,
   }

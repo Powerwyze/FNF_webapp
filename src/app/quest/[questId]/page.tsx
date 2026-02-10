@@ -12,6 +12,7 @@ import * as tf from '@tensorflow/tfjs-core'
 
 const TARGET_REPS = 10
 const HALF_HEALTH_REP = 3
+
 const EXP_BY_DIFFICULTY: Record<string, number> = {
   Novice: 10,
   Adept: 20,
@@ -19,9 +20,23 @@ const EXP_BY_DIFFICULTY: Record<string, number> = {
   Boss: 50
 }
 
-type PushupPhase = 'find_start' | 'go_down' | 'go_up' | 'complete'
+type WorkoutMode =
+  | 'pushup'
+  | 'squat'
+  | 'crunch'
+  | 'back_extension'
+  | 'jumping_jack'
+  | 'mountain_climber'
 
-function getAngle(a: { x: number; y: number }, b: { x: number; y: number }, c: { x: number; y: number }) {
+type QuestPhase = 'find_start' | 'move_a' | 'move_b' | 'complete'
+
+type KP = { x: number; y: number; score?: number; name?: string }
+
+function distance(a: KP, b: KP) {
+  return Math.hypot(a.x - b.x, a.y - b.y)
+}
+
+function getAngle(a: KP, b: KP, c: KP) {
   const ab = { x: a.x - b.x, y: a.y - b.y }
   const cb = { x: c.x - b.x, y: c.y - b.y }
   const dot = ab.x * cb.x + ab.y * cb.y
@@ -30,6 +45,20 @@ function getAngle(a: { x: number; y: number }, b: { x: number; y: number }, c: {
   if (!magAb || !magCb) return null
   const cosine = Math.max(-1, Math.min(1, dot / (magAb * magCb)))
   return (Math.acos(cosine) * 180) / Math.PI
+}
+
+function toWorkoutMode(workout: string): WorkoutMode {
+  const w = workout.toLowerCase()
+  if (w.includes('push')) return 'pushup'
+  if (w.includes('squat')) return 'squat'
+  if (w.includes('crunch')) return 'crunch'
+  if (w.includes('back extension')) return 'back_extension'
+  if (w.includes('jumping')) return 'jumping_jack'
+  return 'mountain_climber'
+}
+
+function findKeypoint(pose: poseDetection.Pose, name: string) {
+  return pose.keypoints.find((k) => k.name === name && (k.score ?? 0) > 0.4) as KP | undefined
 }
 
 export default function QuestWorkoutPage() {
@@ -43,22 +72,27 @@ export default function QuestWorkoutPage() {
   const requestInFlightRef = useRef(false)
   const questCompleteLoggedRef = useRef(false)
   const lastCoachAtRef = useRef(0)
-  const phaseRef = useRef<PushupPhase>('find_start')
+  const phaseRef = useRef<QuestPhase>('find_start')
   const repCountRef = useRef(0)
 
   const [cameraReady, setCameraReady] = useState(false)
   const [cameraError, setCameraError] = useState('')
-  const [phase, setPhase] = useState<PushupPhase>('find_start')
-  const [promptText, setPromptText] = useState('Get into push-up start position')
+  const [phase, setPhase] = useState<QuestPhase>('find_start')
+  const [promptText, setPromptText] = useState('Get into start position')
   const [repCount, setRepCount] = useState(0)
-  const [leftElbowAngle, setLeftElbowAngle] = useState(0)
-  const [rightElbowAngle, setRightElbowAngle] = useState(0)
+  const [leftAngle, setLeftAngle] = useState(0)
+  const [rightAngle, setRightAngle] = useState(0)
   const [coachTip, setCoachTip] = useState('Initializing pose tracker...')
   const [completionMessage, setCompletionMessage] = useState('')
 
   const quest = useMemo(
     () => QUESTS.find((q) => q.id === params.questId),
     [params.questId]
+  )
+
+  const workoutMode = useMemo(
+    () => toWorkoutMode(quest?.workout ?? ''),
+    [quest?.workout]
   )
 
   const monsterStage = repCount >= TARGET_REPS ? 'dead' : repCount >= HALF_HEALTH_REP ? 'half' : 'full'
@@ -99,10 +133,14 @@ export default function QuestWorkoutPage() {
     repCountRef.current = 0
     setPhase('find_start')
     setRepCount(0)
-    setPromptText('Get into push-up start position')
+    setLeftAngle(0)
+    setRightAngle(0)
     setCompletionMessage('')
     setCoachTip('Initializing pose tracker...')
-  }, [quest?.id])
+    if (workoutMode === 'jumping_jack') setPromptText('Start closed stance')
+    else if (workoutMode === 'mountain_climber') setPromptText('Hold plank start')
+    else setPromptText('Get into start position')
+  }, [quest?.id, workoutMode])
 
   useEffect(() => {
     if (!quest) return
@@ -130,7 +168,7 @@ export default function QuestWorkoutPage() {
         videoRef.current.srcObject = stream
         await videoRef.current.play()
         setCameraReady(true)
-        setCoachTip('Pose tracking live. Hold a strong plank to begin.')
+        setCoachTip('Pose tracking live. Start moving through clean reps.')
 
         intervalRef.current = window.setInterval(async () => {
           if (!detectorRef.current || !videoRef.current || requestInFlightRef.current || phaseRef.current === 'complete') return
@@ -140,53 +178,166 @@ export default function QuestWorkoutPage() {
             const pose = poses[0]
             if (!pose?.keypoints?.length) return
 
-            const findKeypoint = (name: string) =>
-              pose.keypoints.find((k) => k.name === name && (k.score ?? 0) > 0.4)
+            const ls = findKeypoint(pose, 'left_shoulder')
+            const rs = findKeypoint(pose, 'right_shoulder')
+            const le = findKeypoint(pose, 'left_elbow')
+            const re = findKeypoint(pose, 'right_elbow')
+            const lw = findKeypoint(pose, 'left_wrist')
+            const rw = findKeypoint(pose, 'right_wrist')
+            const lh = findKeypoint(pose, 'left_hip')
+            const rh = findKeypoint(pose, 'right_hip')
+            const lk = findKeypoint(pose, 'left_knee')
+            const rk = findKeypoint(pose, 'right_knee')
+            const la = findKeypoint(pose, 'left_ankle')
+            const ra = findKeypoint(pose, 'right_ankle')
 
-            const leftShoulder = findKeypoint('left_shoulder')
-            const leftElbow = findKeypoint('left_elbow')
-            const leftWrist = findKeypoint('left_wrist')
-            const rightShoulder = findKeypoint('right_shoulder')
-            const rightElbow = findKeypoint('right_elbow')
-            const rightWrist = findKeypoint('right_wrist')
+            if (!ls || !rs || !lh || !rh || !lk || !rk || !la || !ra) return
 
-            if (!leftShoulder || !leftElbow || !leftWrist || !rightShoulder || !rightElbow || !rightWrist) return
+            const leftElbow = le && lw ? getAngle(ls, le, lw) : null
+            const rightElbow = re && rw ? getAngle(rs, re, rw) : null
+            const leftKnee = getAngle(lh, lk, la)
+            const rightKnee = getAngle(rh, rk, ra)
+            const leftHip = getAngle(ls, lh, lk)
+            const rightHip = getAngle(rs, rh, rk)
 
-            const left = getAngle(leftShoulder, leftElbow, leftWrist)
-            const right = getAngle(rightShoulder, rightElbow, rightWrist)
-            if (!left || !right) return
+            const avgElbow = leftElbow && rightElbow ? (leftElbow + rightElbow) / 2 : null
+            const avgKnee = leftKnee && rightKnee ? (leftKnee + rightKnee) / 2 : null
+            const avgHip = leftHip && rightHip ? (leftHip + rightHip) / 2 : null
 
-            setLeftElbowAngle(left)
-            setRightElbowAngle(right)
-
-            const avg = (left + right) / 2
-            const isUp = avg >= 155
-            const isDown = avg <= 95
+            const metricLeft = leftElbow ?? leftKnee ?? leftHip ?? 0
+            const metricRight = rightElbow ?? rightKnee ?? rightHip ?? 0
+            setLeftAngle(metricLeft)
+            setRightAngle(metricRight)
 
             const currentPhase = phaseRef.current
+            const currentReps = repCountRef.current
 
-            if (currentPhase === 'find_start' && isUp) {
-              phaseRef.current = 'go_down'
-              setPhase('go_down')
-              setPromptText('down')
-            } else if (currentPhase === 'go_down' && isDown) {
-              phaseRef.current = 'go_up'
-              setPhase('go_up')
-              setPromptText('up')
-            } else if (currentPhase === 'go_up' && isUp) {
-              const next = Math.min(TARGET_REPS, repCountRef.current + 1)
-              repCountRef.current = next
-              setRepCount(next)
+            if (workoutMode === 'pushup' && avgElbow) {
+              const isUp = avgElbow >= 155
+              const isDown = avgElbow <= 95
+              if (currentPhase === 'find_start' && isUp) {
+                phaseRef.current = 'move_a'; setPhase('move_a'); setPromptText('down')
+              } else if (currentPhase === 'move_a' && isDown) {
+                phaseRef.current = 'move_b'; setPhase('move_b'); setPromptText('up')
+              } else if (currentPhase === 'move_b' && isUp) {
+                const next = Math.min(TARGET_REPS, currentReps + 1)
+                repCountRef.current = next; setRepCount(next)
+                if (next >= TARGET_REPS) {
+                  phaseRef.current = 'complete'; setPhase('complete'); setPromptText('Quest Complete')
+                  setCompletionMessage('Monster defeated! Quest complete.')
+                } else {
+                  phaseRef.current = 'move_a'; setPhase('move_a'); setPromptText('down')
+                }
+              }
+            }
 
-              if (next >= TARGET_REPS) {
-                phaseRef.current = 'complete'
-                setPhase('complete')
-                setPromptText('Quest Complete')
-                setCompletionMessage('Goblin defeated! Quest complete.')
-              } else {
-                phaseRef.current = 'go_down'
-                setPhase('go_down')
-                setPromptText('down')
+            if (workoutMode === 'squat' && avgKnee) {
+              const isUp = avgKnee >= 160
+              const isDown = avgKnee <= 105
+              if (currentPhase === 'find_start' && isUp) {
+                phaseRef.current = 'move_a'; setPhase('move_a'); setPromptText('down')
+              } else if (currentPhase === 'move_a' && isDown) {
+                phaseRef.current = 'move_b'; setPhase('move_b'); setPromptText('up')
+              } else if (currentPhase === 'move_b' && isUp) {
+                const next = Math.min(TARGET_REPS, currentReps + 1)
+                repCountRef.current = next; setRepCount(next)
+                if (next >= TARGET_REPS) {
+                  phaseRef.current = 'complete'; setPhase('complete'); setPromptText('Quest Complete')
+                  setCompletionMessage('Monster defeated! Quest complete.')
+                } else {
+                  phaseRef.current = 'move_a'; setPhase('move_a'); setPromptText('down')
+                }
+              }
+            }
+
+            if (workoutMode === 'crunch' && avgHip) {
+              const isDown = avgHip >= 155
+              const isUp = avgHip <= 120
+              if (currentPhase === 'find_start' && isDown) {
+                phaseRef.current = 'move_a'; setPhase('move_a'); setPromptText('up')
+              } else if (currentPhase === 'move_a' && isUp) {
+                phaseRef.current = 'move_b'; setPhase('move_b'); setPromptText('down')
+              } else if (currentPhase === 'move_b' && isDown) {
+                const next = Math.min(TARGET_REPS, currentReps + 1)
+                repCountRef.current = next; setRepCount(next)
+                if (next >= TARGET_REPS) {
+                  phaseRef.current = 'complete'; setPhase('complete'); setPromptText('Quest Complete')
+                  setCompletionMessage('Monster defeated! Quest complete.')
+                } else {
+                  phaseRef.current = 'move_a'; setPhase('move_a'); setPromptText('up')
+                }
+              }
+            }
+
+            if (workoutMode === 'back_extension' && avgHip) {
+              const isDown = avgHip <= 120
+              const isUp = avgHip >= 155
+              if (currentPhase === 'find_start' && isDown) {
+                phaseRef.current = 'move_a'; setPhase('move_a'); setPromptText('up')
+              } else if (currentPhase === 'move_a' && isUp) {
+                phaseRef.current = 'move_b'; setPhase('move_b'); setPromptText('down')
+              } else if (currentPhase === 'move_b' && isDown) {
+                const next = Math.min(TARGET_REPS, currentReps + 1)
+                repCountRef.current = next; setRepCount(next)
+                if (next >= TARGET_REPS) {
+                  phaseRef.current = 'complete'; setPhase('complete'); setPromptText('Quest Complete')
+                  setCompletionMessage('Monster defeated! Quest complete.')
+                } else {
+                  phaseRef.current = 'move_a'; setPhase('move_a'); setPromptText('up')
+                }
+              }
+            }
+
+            if (workoutMode === 'jumping_jack' && lw && rw) {
+              const shoulderWidth = Math.max(distance(ls, rs), 1)
+              const hipWidth = Math.max(distance(lh, rh), 1)
+              const wristDist = distance(lw, rw)
+              const ankleDist = distance(la, ra)
+              const wristsHigh = lw.y < ls.y && rw.y < rs.y
+              const isOpen = wristDist > shoulderWidth * 1.8 && ankleDist > hipWidth * 1.7 && wristsHigh
+              const isClosed = wristDist < shoulderWidth * 1.2 && ankleDist < hipWidth * 1.4
+
+              if (currentPhase === 'find_start' && isClosed) {
+                phaseRef.current = 'move_a'; setPhase('move_a'); setPromptText('open')
+              } else if (currentPhase === 'move_a' && isOpen) {
+                phaseRef.current = 'move_b'; setPhase('move_b'); setPromptText('close')
+              } else if (currentPhase === 'move_b' && isClosed) {
+                const next = Math.min(TARGET_REPS, currentReps + 1)
+                repCountRef.current = next; setRepCount(next)
+                if (next >= TARGET_REPS) {
+                  phaseRef.current = 'complete'; setPhase('complete'); setPromptText('Quest Complete')
+                  setCompletionMessage('Monster defeated! Quest complete.')
+                } else {
+                  phaseRef.current = 'move_a'; setPhase('move_a'); setPromptText('open')
+                }
+              }
+            }
+
+            if (workoutMode === 'mountain_climber' && leftKnee && rightKnee) {
+              const plankReady = leftKnee > 145 && rightKnee > 145
+              const leftDrive = leftKnee < 100 && rightKnee > 135
+              const rightDrive = rightKnee < 100 && leftKnee > 135
+
+              if (currentPhase === 'find_start' && plankReady) {
+                phaseRef.current = 'move_a'; setPhase('move_a'); setPromptText('left knee in')
+              } else if (currentPhase === 'move_a' && leftDrive) {
+                const next = Math.min(TARGET_REPS, currentReps + 1)
+                repCountRef.current = next; setRepCount(next)
+                if (next >= TARGET_REPS) {
+                  phaseRef.current = 'complete'; setPhase('complete'); setPromptText('Quest Complete')
+                  setCompletionMessage('Monster defeated! Quest complete.')
+                } else {
+                  phaseRef.current = 'move_b'; setPhase('move_b'); setPromptText('right knee in')
+                }
+              } else if (currentPhase === 'move_b' && rightDrive) {
+                const next = Math.min(TARGET_REPS, currentReps + 1)
+                repCountRef.current = next; setRepCount(next)
+                if (next >= TARGET_REPS) {
+                  phaseRef.current = 'complete'; setPhase('complete'); setPromptText('Quest Complete')
+                  setCompletionMessage('Monster defeated! Quest complete.')
+                } else {
+                  phaseRef.current = 'move_a'; setPhase('move_a'); setPromptText('left knee in')
+                }
               }
             }
 
@@ -204,8 +355,8 @@ export default function QuestWorkoutPage() {
                   phase: phaseRef.current,
                   reps: repCountRef.current,
                   targetReps: TARGET_REPS,
-                  leftElbowAngle: left,
-                  rightElbowAngle: right
+                  leftElbowAngle: metricLeft,
+                  rightElbowAngle: metricRight
                 })
               })
               if (coachRes.ok) {
@@ -234,7 +385,7 @@ export default function QuestWorkoutPage() {
       streamRef.current = null
       setCameraReady(false)
     }
-  }, [quest, session?.access_token, user])
+  }, [quest, session?.access_token, user, workoutMode])
 
   useEffect(() => {
     async function awardQuestCompletion() {
@@ -250,9 +401,9 @@ export default function QuestWorkoutPage() {
         body: JSON.stringify({ userId: user.id, expGain })
       })
       if (response.ok) {
-        setCompletionMessage(`Goblin defeated. +${expGain} EXP awarded.`)
+        setCompletionMessage(`Monster defeated. +${expGain} EXP awarded.`)
       } else {
-        setCompletionMessage('Goblin defeated, but EXP update failed. Try again from profile.')
+        setCompletionMessage('Monster defeated, but EXP update failed. Try again from profile.')
       }
     }
     void awardQuestCompletion()
@@ -284,7 +435,7 @@ export default function QuestWorkoutPage() {
           <div className="glass rounded-lg p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <div className="text-3xl title-font">{quest.title}</div>
-              <div className="text-sm text-gray-400">Target: {TARGET_REPS} reps</div>
+              <div className="text-sm text-gray-400">Workout: {quest.workout} | Target: {TARGET_REPS} reps</div>
             </div>
             <button onClick={() => router.push('/quest-gallery')} className="btn-secondary text-sm">
               Exit Quest
@@ -313,12 +464,12 @@ export default function QuestWorkoutPage() {
                   <div>{cameraError ? 'Error' : cameraReady ? 'Live' : 'Starting...'}</div>
                 </div>
                 <div className="glass-dark rounded p-3">
-                  <div className="text-gray-400 text-xs uppercase">Left Elbow</div>
-                  <div>{Math.round(leftElbowAngle)} deg</div>
+                  <div className="text-gray-400 text-xs uppercase">Left Joint Angle</div>
+                  <div>{Math.round(leftAngle)} deg</div>
                 </div>
                 <div className="glass-dark rounded p-3">
-                  <div className="text-gray-400 text-xs uppercase">Right Elbow</div>
-                  <div>{Math.round(rightElbowAngle)} deg</div>
+                  <div className="text-gray-400 text-xs uppercase">Right Joint Angle</div>
+                  <div>{Math.round(rightAngle)} deg</div>
                 </div>
               </div>
 

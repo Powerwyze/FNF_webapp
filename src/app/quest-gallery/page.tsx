@@ -57,8 +57,18 @@ export default function QuestGalleryPage() {
                     <h2 className="text-xl font-semibold title-font">{quest.title}</h2>
                     <span className="text-xs uppercase tracking-wider text-gray-400">{quest.difficulty}</span>
                   </div>
-                  <div className="text-sm text-gray-300">
-                    <span className="font-semibold text-white">{quest.monster}</span> - {quest.workout}
+                  <div className="flex items-center gap-3 text-sm text-gray-300">
+                    <div className="relative h-10 w-10 overflow-hidden rounded-full border border-red-900/40 bg-black/30">
+                      <Image
+                        src={quest.monsterThumbnail}
+                        alt={`${quest.monster} thumbnail`}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div>
+                      <span className="font-semibold text-white">{quest.monster}</span> - {quest.workout}
+                    </div>
                   </div>
                   <div className="text-sm text-gray-400">Rep Goal: {quest.repGoal}</div>
                   <p className="text-sm text-gray-400">{quest.blurb}</p>

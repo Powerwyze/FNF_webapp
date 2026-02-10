@@ -2,6 +2,7 @@ export type Quest = {
   id: string
   title: string
   monster: string
+  monsterThumbnail: string
   workout: string
   repGoal: string
   difficulty: 'Novice' | 'Adept' | 'Veteran' | 'Boss'
@@ -14,6 +15,7 @@ export const QUESTS: Quest[] = [
     id: 'goblin-jumpjack',
     title: 'Jumping Jacks Goblin',
     monster: 'Goblin',
+    monsterThumbnail: '/quests/Goblin_dead.png',
     workout: 'Jumping Jacks',
     repGoal: '3 rounds of 30',
     difficulty: 'Novice',
@@ -24,6 +26,7 @@ export const QUESTS: Quest[] = [
     id: 'goblin-climber',
     title: 'Mountain Climbers Goblin',
     monster: 'Goblin',
+    monsterThumbnail: '/quests/Goblin_dead.png',
     workout: 'Mountain Climbers',
     repGoal: '3 rounds of 20 per side',
     difficulty: 'Novice',
@@ -34,6 +37,7 @@ export const QUESTS: Quest[] = [
     id: 'goblin-crunch',
     title: 'Crunches Goblin',
     monster: 'Goblin',
+    monsterThumbnail: '/quests/Goblin_dead.png',
     workout: 'Crunches',
     repGoal: '3 rounds of 25',
     difficulty: 'Novice',
@@ -44,6 +48,7 @@ export const QUESTS: Quest[] = [
     id: 'orc-pushup',
     title: 'Push-ups Orc',
     monster: 'Orc',
+    monsterThumbnail: '/quests/orc-thumbnail.svg',
     workout: 'Push-ups',
     repGoal: '4 rounds of 12',
     difficulty: 'Adept',
@@ -54,6 +59,7 @@ export const QUESTS: Quest[] = [
     id: 'orc-back-extension',
     title: 'Back Extensions Orc',
     monster: 'Orc',
+    monsterThumbnail: '/quests/orc-thumbnail.svg',
     workout: 'Back Extensions',
     repGoal: '4 rounds of 15',
     difficulty: 'Adept',
@@ -64,6 +70,7 @@ export const QUESTS: Quest[] = [
     id: 'orc-jumpjack',
     title: 'Jumping Jacks Orc',
     monster: 'Orc',
+    monsterThumbnail: '/quests/orc-thumbnail.svg',
     workout: 'Jumping Jacks',
     repGoal: '4 rounds of 25',
     difficulty: 'Adept',
@@ -74,6 +81,7 @@ export const QUESTS: Quest[] = [
     id: 'dragon-squats',
     title: 'Squats Dragon',
     monster: 'Dragon',
+    monsterThumbnail: '/quests/dragon-thumbnail.svg',
     workout: 'Squats',
     repGoal: '5 rounds of 12',
     difficulty: 'Boss',

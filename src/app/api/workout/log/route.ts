@@ -1,6 +1,11 @@
 import { NextRequest } from 'next/server'
-import { supabase } from '@/lib/supabaseClient'
+import { createClient } from '@supabase/supabase-js'
 import { requireUser } from '@/lib/serverAuth'
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_KEY!
+)
 
 const RANK_THRESHOLDS = {
   E: 0,
@@ -36,7 +41,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // Fetch current profile
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('exp, rank, rank_locked_until, class')
       .eq('id', userId)
@@ -60,7 +65,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Update profile
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('profiles')
       .update({
         exp: newExp,
@@ -74,7 +79,7 @@ export async function POST(req: NextRequest) {
     if (updateError) throw updateError
 
     // Log EXP change
-    const { error: logError } = await supabase
+    const { error: logError } = await supabaseAdmin
       .from('exp_log')
       .insert({
         user_id: userId,
@@ -99,5 +104,4 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'Failed to log workout' }, { status: 500 })
   }
 }
-
 

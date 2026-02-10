@@ -5,21 +5,12 @@ import Image from 'next/image'
 import { Header } from '@/components/Header'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { QUESTS } from '@/data/quests'
-import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation'
 
 export default function QuestGalleryPage() {
   const sectionRef = useRef<HTMLDivElement | null>(null)
-  const { user, session } = useAuth()
+  const router = useRouter()
   const [activeQuestId, setActiveQuestId] = useState<string | null>(null)
-  const [statusMessage, setStatusMessage] = useState<string>('')
-  const [statusError, setStatusError] = useState<string>('')
-
-  const EXP_BY_DIFFICULTY: Record<string, number> = {
-    Novice: 10,
-    Adept: 20,
-    Veteran: 30,
-    Boss: 50
-  }
 
   useEffect(() => {
     if (!sectionRef.current) return
@@ -33,37 +24,9 @@ export default function QuestGalleryPage() {
     return () => ctx.revert()
   }, [])
 
-  async function acceptQuest(questId: string, difficulty: string, title: string) {
-    if (!user) return
-
-    setStatusMessage('')
-    setStatusError('')
+  async function acceptQuest(questId: string) {
     setActiveQuestId(questId)
-
-    try {
-      const authHeaders: Record<string, string> = session?.access_token
-        ? { Authorization: `Bearer ${session.access_token}` }
-        : {}
-
-      const expGain = EXP_BY_DIFFICULTY[difficulty] ?? 10
-      const response = await fetch('/api/workout/log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders },
-        body: JSON.stringify({ userId: user.id, expGain })
-      })
-
-      if (!response.ok) {
-        const errorPayload = await response.json().catch(() => null)
-        throw new Error(errorPayload?.error || 'Failed to start quest')
-      }
-
-      setStatusMessage(`${title} started. +${expGain} EXP awarded.`)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to start quest'
-      setStatusError(message)
-    } finally {
-      setActiveQuestId(null)
-    }
+    router.push(`/quest/${questId}`)
   }
 
   return (
@@ -81,12 +44,6 @@ export default function QuestGalleryPage() {
               Choose a monster and complete its workout to claim EXP for your guild. Each quest is a
               focused training battle built for heroes of every class.
             </p>
-            {statusMessage && (
-              <div className="mt-4 text-sm text-emerald-300">{statusMessage}</div>
-            )}
-            {statusError && (
-              <div className="mt-4 text-sm text-red-400">{statusError}</div>
-            )}
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -124,11 +81,11 @@ export default function QuestGalleryPage() {
                   <div className="text-sm text-gray-400">Rep Goal: {quest.repGoal}</div>
                   <p className="text-sm text-gray-400">{quest.blurb}</p>
                   <button
-                    onClick={() => acceptQuest(quest.id, quest.difficulty, quest.title)}
+                    onClick={() => acceptQuest(quest.id)}
                     disabled={activeQuestId === quest.id}
                     className="btn-primary text-sm w-full disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {activeQuestId === quest.id ? 'Starting Quest...' : 'Accept Quest'}
+                    {activeQuestId === quest.id ? 'Loading Quest...' : 'Accept Quest'}
                   </button>
                 </div>
               </article>

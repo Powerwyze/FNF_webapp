@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 export default function AuthPage() {
   const [authError, setAuthError] = useState<string>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { signInAsGuest } = useAuth()
+  const { signInAsGuest, signOut, user, loading } = useAuth()
   const router = useRouter()
 
   async function enterGuild() {
@@ -43,14 +43,31 @@ export default function AuthPage() {
                 {authError}
               </div>
             )}
-            <p className="text-sm text-gray-300 text-center mb-6">
-              Email login is disabled. Enter instantly and complete your hero class assessment.
-            </p>
-            <div className="flex justify-center">
-              <button onClick={enterGuild} disabled={isSubmitting} className="btn-primary w-full">
-                {isSubmitting ? 'Entering...' : 'Enter Guild'}
-              </button>
-            </div>
+            {!loading && !user && (
+              <>
+                <p className="text-sm text-gray-300 text-center mb-6">
+                  Email login is disabled. Use guest login to continue.
+                </p>
+                <div className="flex justify-center">
+                  <button onClick={enterGuild} disabled={isSubmitting} className="btn-primary w-full">
+                    {isSubmitting ? 'Logging In...' : 'Log In'}
+                  </button>
+                </div>
+              </>
+            )}
+            {!loading && user && (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-300 text-center">
+                  You are already logged in.
+                </p>
+                <button onClick={() => router.push('/profile')} className="btn-primary w-full">
+                  Continue To Profile
+                </button>
+                <button onClick={() => signOut()} className="btn-secondary w-full">
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

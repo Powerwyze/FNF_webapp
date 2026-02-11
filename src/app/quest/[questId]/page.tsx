@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { Header } from '@/components/Header'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { QUESTS } from '@/data/quests'
+import { MONSTER_PHASE_MEDIA } from '@/data/monsterPhases'
 import { useAuth } from '@/contexts/AuthContext'
 import * as poseDetection from '@tensorflow-models/pose-detection'
 import '@tensorflow/tfjs-backend-webgl'
@@ -99,25 +100,28 @@ export default function QuestWorkoutPage() {
 
   const monsterStage = repCount >= TARGET_REPS ? 'dead' : repCount >= HALF_HEALTH_REP ? 'half' : 'full'
 
-  const monsterPanel = monsterStage === 'dead'
+  const monsterMediaSet = MONSTER_PHASE_MEDIA[quest?.monster ?? 'Goblin'] ?? MONSTER_PHASE_MEDIA.Goblin
+  const monsterMedia = monsterMediaSet[monsterStage]
+
+  const monsterPanel = monsterMedia.type === 'video'
     ? (
-      <Image
-        src="/quests/Goblin_dead.png"
-        alt="Goblin defeated"
-        width={960}
-        height={540}
-        className="w-full h-full object-cover"
-      />
-    )
-    : (
       <video
-        key={monsterStage}
-        src={monsterStage === 'half' ? '/quests/Goblin_halfHealth.mp4' : '/quests/Goblin_fullHealth.mp4'}
+        key={`${quest?.monster}-${monsterStage}`}
+        src={monsterMedia.src}
         className="w-full h-full object-cover"
         autoPlay
         loop
         muted
         playsInline
+      />
+    )
+    : (
+      <Image
+        src={monsterMedia.src}
+        alt={`${quest?.monster ?? 'Monster'} ${monsterStage}`}
+        width={960}
+        height={540}
+        className="w-full h-full object-cover"
       />
     )
 

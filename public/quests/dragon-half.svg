@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-label="Dragon half health">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#991b1b"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <path d="M430 470 C430 300 850 300 850 470 C850 560 760 630 640 630 C520 630 430 560 430 470 Z" fill="#ef4444"/>
+  <circle cx="560" cy="430" r="18" fill="#111827"/>
+  <circle cx="720" cy="430" r="18" fill="#111827"/>
+  <path d="M560 510 Q640 470 720 510" stroke="#fca5a5" stroke-width="10" fill="none"/>
+  <text x="640" y="120" text-anchor="middle" font-size="76" fill="#f3f4f6" font-family="Arial">DRAGON - HALF HEALTH</text>
+</svg>

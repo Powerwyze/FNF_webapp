@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-label="Orc full health">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#14532d"/>
+      <stop offset="100%" stop-color="#052e16"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <circle cx="640" cy="370" r="200" fill="#65a30d"/>
+  <circle cx="560" cy="350" r="20" fill="#111827"/>
+  <circle cx="720" cy="350" r="20" fill="#111827"/>
+  <rect x="560" y="430" width="160" height="34" rx="16" fill="#2b1a10"/>
+  <text x="640" y="120" text-anchor="middle" font-size="76" fill="#e5e7eb" font-family="Arial">ORC - FULL HEALTH</text>
+</svg>

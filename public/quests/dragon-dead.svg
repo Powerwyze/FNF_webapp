@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-label="Dragon dead">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#030712"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <path d="M430 470 C430 300 850 300 850 470 C850 560 760 630 640 630 C520 630 430 560 430 470 Z" fill="#4b5563"/>
+  <text x="640" y="466" text-anchor="middle" font-size="90" fill="#ef4444" font-family="Arial">X   X</text>
+  <text x="640" y="120" text-anchor="middle" font-size="76" fill="#e5e7eb" font-family="Arial">DRAGON - SLAIN</text>
+</svg>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-label="Orc dead">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#030712"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <circle cx="640" cy="370" r="200" fill="#4b5563"/>
+  <text x="640" y="382" text-anchor="middle" font-size="82" fill="#ef4444" font-family="Arial">X   X</text>
+  <text x="640" y="120" text-anchor="middle" font-size="76" fill="#e5e7eb" font-family="Arial">ORC - SLAIN</text>
+</svg>

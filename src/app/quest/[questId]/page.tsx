@@ -66,6 +66,7 @@ export default function QuestWorkoutPage() {
   const router = useRouter()
   const { user, session } = useAuth()
   const videoRef = useRef<HTMLVideoElement | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const detectorRef = useRef<poseDetection.PoseDetector | null>(null)
   const intervalRef = useRef<number | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -84,6 +85,7 @@ export default function QuestWorkoutPage() {
   const [rightAngle, setRightAngle] = useState(0)
   const [coachTip, setCoachTip] = useState('Initializing pose tracker...')
   const [completionMessage, setCompletionMessage] = useState('')
+  const [isMirrored, setIsMirrored] = useState(true)
 
   const quest = useMemo(
     () => QUESTS.find((q) => q.id === params.questId),
@@ -147,6 +149,99 @@ export default function QuestWorkoutPage() {
     const questData = quest
     let cancelled = false
 
+    function drawPoseOverlay(pose: poseDetection.Pose) {
+      const video = videoRef.current
+      const canvas = canvasRef.current
+      if (!video || !canvas) return
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+        canvas.width = video.videoWidth
+        canvas.height = video.videoHeight
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      const pairs = poseDetection.util.getAdjacentPairs(poseDetection.SupportedModels.MoveNet)
+      ctx.lineWidth = 3
+      ctx.strokeStyle = '#22d3ee'
+      ctx.fillStyle = '#facc15'
+
+      for (const [i, j] of pairs) {
+        const a = pose.keypoints[i]
+        const b = pose.keypoints[j]
+        if (!a || !b || (a.score ?? 0) < 0.35 || (b.score ?? 0) < 0.35) continue
+        ctx.beginPath()
+        ctx.moveTo(a.x, a.y)
+        ctx.lineTo(b.x, b.y)
+        ctx.stroke()
+      }
+
+      for (const point of pose.keypoints) {
+        if ((point.score ?? 0) < 0.35) continue
+        ctx.beginPath()
+        ctx.arc(point.x, point.y, 4, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
+
+    async function getWidestStream() {
+      const candidates: MediaStreamConstraints[] = [
+        {
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 2560 },
+            height: { ideal: 1440 },
+            aspectRatio: { ideal: 16 / 9 }
+          },
+          audio: false
+        },
+        {
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          },
+          audio: false
+        },
+        {
+          video: {
+            facingMode: { ideal: 'user' },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          },
+          audio: false
+        },
+        { video: true, audio: false }
+      ]
+
+      for (const constraints of candidates) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia(constraints)
+          const track = stream.getVideoTracks()[0]
+          if (track) {
+            const capabilities = track.getCapabilities() as MediaTrackCapabilities & { zoom?: { min: number; max: number } }
+            if (capabilities?.zoom && typeof capabilities.zoom.min === 'number') {
+              try {
+                await track.applyConstraints({ advanced: [{ zoom: capabilities.zoom.min } as any] })
+              } catch {
+                // ignore zoom adjustment failures
+              }
+            }
+
+            const settings = track.getSettings()
+            setIsMirrored(settings.facingMode !== 'environment')
+          }
+          return stream
+        } catch {
+          // try next candidate
+        }
+      }
+
+      throw new Error('Unable to access camera stream')
+    }
+
     async function startTracking() {
       try {
         await tf.setBackend('webgl')
@@ -158,10 +253,7 @@ export default function QuestWorkoutPage() {
         )
         detectorRef.current = detector
 
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: 1280, height: 720, facingMode: 'user' },
-          audio: false
-        })
+        const stream = await getWidestStream()
         streamRef.current = stream
 
         if (!videoRef.current || cancelled) return
@@ -177,6 +269,7 @@ export default function QuestWorkoutPage() {
             const poses = await detectorRef.current.estimatePoses(videoRef.current, { flipHorizontal: true })
             const pose = poses[0]
             if (!pose?.keypoints?.length) return
+            drawPoseOverlay(pose)
 
             const ls = findKeypoint(pose, 'left_shoulder')
             const rs = findKeypoint(pose, 'right_shoulder')
@@ -288,14 +381,18 @@ export default function QuestWorkoutPage() {
               }
             }
 
-            if (workoutMode === 'jumping_jack' && lw && rw) {
+            const leftHand = lw ?? le
+            const rightHand = rw ?? re
+            if (workoutMode === 'jumping_jack' && leftHand && rightHand) {
               const shoulderWidth = Math.max(distance(ls, rs), 1)
               const hipWidth = Math.max(distance(lh, rh), 1)
-              const wristDist = distance(lw, rw)
+              const wristDist = distance(leftHand, rightHand)
               const ankleDist = distance(la, ra)
-              const wristsHigh = lw.y < ls.y && rw.y < rs.y
-              const isOpen = wristDist > shoulderWidth * 1.8 && ankleDist > hipWidth * 1.7 && wristsHigh
-              const isClosed = wristDist < shoulderWidth * 1.2 && ankleDist < hipWidth * 1.4
+              const wristsHigh = leftHand.y < ((ls.y + rs.y) / 2) && rightHand.y < ((ls.y + rs.y) / 2)
+              const armSpread = wristDist / shoulderWidth
+              const legSpread = ankleDist / hipWidth
+              const isOpen = legSpread > 1.55 && (armSpread > 1.6 || wristsHigh)
+              const isClosed = legSpread < 1.35 && armSpread < 1.55
 
               if (currentPhase === 'find_start' && isClosed) {
                 phaseRef.current = 'move_a'; setPhase('move_a'); setPromptText('open')
@@ -383,6 +480,10 @@ export default function QuestWorkoutPage() {
       detectorRef.current = null
       streamRef.current?.getTracks().forEach((t) => t.stop())
       streamRef.current = null
+      if (canvasRef.current) {
+        const ctx = canvasRef.current.getContext('2d')
+        ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
+      }
       setCameraReady(false)
     }
   }, [quest, session?.access_token, user, workoutMode])
@@ -445,7 +546,16 @@ export default function QuestWorkoutPage() {
           <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 glass rounded-lg p-4">
               <div className="relative bg-black rounded-lg overflow-hidden border border-red-900/40">
-                <video ref={videoRef} className="w-full aspect-video object-cover scale-x-[-1]" muted playsInline />
+                <video
+                  ref={videoRef}
+                  className={`w-full aspect-video object-cover ${isMirrored ? 'scale-x-[-1]' : ''}`}
+                  muted
+                  playsInline
+                />
+                <canvas
+                  ref={canvasRef}
+                  className={`absolute inset-0 w-full h-full pointer-events-none ${isMirrored ? 'scale-x-[-1]' : ''}`}
+                />
 
                 <div className="absolute left-3 top-3 bg-black/70 border border-red-700/50 px-4 py-2 rounded">
                   <div className="text-xs uppercase text-gray-400">Prompt</div>

@@ -1,30 +1,50 @@
 "use client"
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Header } from '@/components/Header'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 
-export default function AuthPage() {
-  const [authError, setAuthError] = useState<string>('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const { signInAsGuest, signOut, user, loading } = useAuth()
-  const router = useRouter()
+const schema = z.object({
+  email: z.string().email('Enter a valid email'),
+  password: z.string().min(6, 'Password must be at least 6 characters')
+})
 
-  async function enterGuild() {
+type FormValues = z.infer<typeof schema>
+
+export default function AuthPage() {
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
+  const [authError, setAuthError] = useState('')
+  const { signUp, signIn } = useAuth()
+  const router = useRouter()
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting }
+  } = useForm<FormValues>({ resolver: zodResolver(schema) })
+
+  async function onSubmit(values: FormValues) {
     setAuthError('')
-    setIsSubmitting(true)
 
     try {
-      const { error } = await signInAsGuest()
-      if (error) {
-        setAuthError(error.message)
+      if (mode === 'signup') {
+        const { error } = await signUp(values.email, values.password)
+        if (error) {
+          setAuthError(error.message)
+          return
+        }
       } else {
-        router.push('/profile')
+        const { error } = await signIn(values.email, values.password)
+        if (error) {
+          setAuthError(error.message)
+          return
+        }
       }
+      router.push('/profile')
     } catch {
-      setAuthError('An unexpected error occurred')
-    } finally {
-      setIsSubmitting(false)
+      setAuthError('Authentication failed. Please try again.')
     }
   }
 
@@ -34,7 +54,9 @@ export default function AuthPage() {
       <div className="container mx-auto px-6">
         <div className="max-w-md mx-auto">
           <h1 className="text-4xl font-bold text-center mb-8 title-font">
-            <span className="bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">ENTER THE GUILD</span>
+            <span className="bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+              {mode === 'signin' ? 'LOG IN' : 'CREATE ACCOUNT'}
+            </span>
           </h1>
 
           <div className="glass p-8 rounded-lg border-t-4 border-red-600">
@@ -43,34 +65,65 @@ export default function AuthPage() {
                 {authError}
               </div>
             )}
-            {!loading && !user && (
-              <>
-                <p className="text-sm text-gray-300 text-center mb-6">
-                  Email login is disabled. Use guest login to continue.
-                </p>
-                <div className="flex justify-center">
-                  <button onClick={enterGuild} disabled={isSubmitting} className="btn-primary w-full">
-                    {isSubmitting ? 'Logging In...' : 'Log In'}
-                  </button>
-                </div>
-              </>
-            )}
-            {!loading && user && (
-              <div className="space-y-3">
-                <p className="text-sm text-gray-300 text-center">
-                  You are already logged in.
-                </p>
-                <button onClick={() => router.push('/profile')} className="btn-primary w-full">
-                  Continue To Profile
-                </button>
-                <button onClick={() => signOut()} className="btn-secondary w-full">
-                  Sign Out
-                </button>
+
+            <div className="flex gap-2 mb-6">
+              <button
+                onClick={() => setMode('signin')}
+                className={`flex-1 py-2 px-4 font-semibold uppercase tracking-wider transition-all ${
+                  mode === 'signin'
+                    ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white'
+                    : 'border border-gray-600 hover:border-red-600'
+                }`}
+              >
+                Log In
+              </button>
+              <button
+                onClick={() => setMode('signup')}
+                className={`flex-1 py-2 px-4 font-semibold uppercase tracking-wider transition-all ${
+                  mode === 'signup'
+                    ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white'
+                    : 'border border-gray-600 hover:border-red-600'
+                }`}
+              >
+                Sign Up
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold uppercase tracking-wider mb-2 text-gray-400">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  placeholder="hero@example.com"
+                  className="w-full px-4 py-3 bg-black/50 border border-gray-700 rounded focus:border-red-600 focus:outline-none transition-colors"
+                  {...register('email')}
+                />
+                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
               </div>
-            )}
+
+              <div>
+                <label className="block text-sm font-semibold uppercase tracking-wider mb-2 text-gray-400">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  placeholder="********"
+                  className="w-full px-4 py-3 bg-black/50 border border-gray-700 rounded focus:border-red-600 focus:outline-none transition-colors"
+                  {...register('password')}
+                />
+                {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+              </div>
+
+              <button disabled={isSubmitting} className="w-full btn-primary mt-6">
+                {isSubmitting ? 'Please wait...' : mode === 'signin' ? 'LOG IN' : 'CREATE ACCOUNT'}
+              </button>
+            </form>
           </div>
         </div>
       </div>
     </div>
   )
 }
+

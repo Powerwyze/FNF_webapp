@@ -89,6 +89,8 @@ export default function QuestWorkoutPage() {
   const [isMirrored, setIsMirrored] = useState(true)
   const [isPortrait, setIsPortrait] = useState(false)
   const [orientationNotice, setOrientationNotice] = useState('')
+  const [showStartModal, setShowStartModal] = useState(true)
+  const [hasStartedWorkout, setHasStartedWorkout] = useState(false)
 
   const quest = useMemo(
     () => QUESTS.find((q) => q.id === params.questId),
@@ -145,6 +147,8 @@ export default function QuestWorkoutPage() {
     setRightAngle(0)
     setCompletionMessage('')
     setCoachTip('Initializing pose tracker...')
+    setShowStartModal(true)
+    setHasStartedWorkout(false)
     if (workoutMode === 'jumping_jack') setPromptText('Start closed stance')
     else if (workoutMode === 'mountain_climber') setPromptText('Hold plank start')
     else setPromptText('Get into start position')
@@ -184,6 +188,7 @@ export default function QuestWorkoutPage() {
 
   useEffect(() => {
     if (!quest) return
+    if (!hasStartedWorkout) return
     const questData = quest
     let cancelled = false
 
@@ -524,7 +529,7 @@ export default function QuestWorkoutPage() {
       }
       setCameraReady(false)
     }
-  }, [quest, session?.access_token, user, workoutMode])
+  }, [quest, session?.access_token, user, workoutMode, hasStartedWorkout])
 
   useEffect(() => {
     async function awardQuestCompletion() {
@@ -571,6 +576,27 @@ export default function QuestWorkoutPage() {
       <div className="min-h-screen">
         <Header />
         <section className="container mx-auto px-6 py-6 space-y-6">
+          {showStartModal && (
+            <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center px-6">
+              <div className="glass rounded-lg border border-red-700/50 max-w-xl w-full p-6 space-y-4">
+                <h2 className="text-3xl title-font text-center">Before You Start</h2>
+                <p className="text-sm text-gray-200">
+                  Step back so your full body stays visible in the camera frame. Keep your workout pace
+                  moderate and controlled so the tracker can count reps accurately.
+                </p>
+                <button
+                  onClick={() => {
+                    setShowStartModal(false)
+                    setHasStartedWorkout(true)
+                  }}
+                  className="btn-primary w-full"
+                >
+                  Start Workout
+                </button>
+              </div>
+            </div>
+          )}
+
           {(isPortrait || orientationNotice) && (
             <div className="glass rounded-lg p-3 text-sm text-yellow-300 border border-yellow-700/50">
               {orientationNotice || 'Rotate device to landscape for side-by-side workout and monster feeds.'}

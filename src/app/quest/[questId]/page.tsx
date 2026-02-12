@@ -228,7 +228,7 @@ export default function QuestWorkoutPage() {
       const candidates: MediaStreamConstraints[] = [
         {
           video: {
-            facingMode: { ideal: 'environment' },
+            facingMode: { exact: 'user' },
             width: { ideal: 2560 },
             height: { ideal: 1440 },
             aspectRatio: { ideal: 16 / 9 }
@@ -237,7 +237,7 @@ export default function QuestWorkoutPage() {
         },
         {
           video: {
-            facingMode: { ideal: 'environment' },
+            facingMode: { ideal: 'user' },
             width: { ideal: 1920 },
             height: { ideal: 1080 }
           },
@@ -246,8 +246,8 @@ export default function QuestWorkoutPage() {
         {
           video: {
             facingMode: { ideal: 'user' },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
           },
           audio: false
         },
@@ -269,7 +269,7 @@ export default function QuestWorkoutPage() {
             }
 
             const settings = track.getSettings()
-            setIsMirrored(settings.facingMode !== 'environment')
+            setIsMirrored(true)
           }
           return stream
         } catch {

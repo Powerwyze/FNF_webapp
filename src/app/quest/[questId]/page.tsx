@@ -87,6 +87,8 @@ export default function QuestWorkoutPage() {
   const [coachTip, setCoachTip] = useState('Initializing pose tracker...')
   const [completionMessage, setCompletionMessage] = useState('')
   const [isMirrored, setIsMirrored] = useState(true)
+  const [isPortrait, setIsPortrait] = useState(false)
+  const [orientationNotice, setOrientationNotice] = useState('')
 
   const quest = useMemo(
     () => QUESTS.find((q) => q.id === params.questId),
@@ -147,6 +149,38 @@ export default function QuestWorkoutPage() {
     else if (workoutMode === 'mountain_climber') setPromptText('Hold plank start')
     else setPromptText('Get into start position')
   }, [quest?.id, workoutMode])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const media = window.matchMedia('(orientation: portrait)')
+    const updateOrientation = () => setIsPortrait(media.matches)
+    updateOrientation()
+    media.addEventListener('change', updateOrientation)
+
+    async function tryLockLandscape() {
+      try {
+        const orientation = (screen.orientation as any)
+        if (orientation?.lock) {
+          await orientation.lock('landscape')
+        }
+      } catch {
+        setOrientationNotice('Rotate to landscape for best tracking and split-screen battle view.')
+      }
+    }
+
+    void tryLockLandscape()
+
+    return () => {
+      media.removeEventListener('change', updateOrientation)
+      try {
+        const orientation = (screen.orientation as any)
+        if (orientation?.unlock) orientation.unlock()
+      } catch {
+        // ignore unlock errors
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (!quest) return
@@ -537,6 +571,12 @@ export default function QuestWorkoutPage() {
       <div className="min-h-screen">
         <Header />
         <section className="container mx-auto px-6 py-6 space-y-6">
+          {(isPortrait || orientationNotice) && (
+            <div className="glass rounded-lg p-3 text-sm text-yellow-300 border border-yellow-700/50">
+              {orientationNotice || 'Rotate device to landscape for side-by-side workout and monster feeds.'}
+            </div>
+          )}
+
           <div className="glass rounded-lg p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <div className="text-3xl title-font">{quest.title}</div>
@@ -547,8 +587,8 @@ export default function QuestWorkoutPage() {
             </button>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 glass rounded-lg p-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="glass rounded-lg p-4">
               <div className="relative bg-black rounded-lg overflow-hidden border border-red-900/40">
                 <video
                   ref={videoRef}
@@ -571,39 +611,40 @@ export default function QuestWorkoutPage() {
                   <div className="text-2xl title-font text-white">{repCount}/{TARGET_REPS}</div>
                 </div>
               </div>
-
-              <div className="mt-4 grid sm:grid-cols-3 gap-3 text-sm">
-                <div className="glass-dark rounded p-3">
-                  <div className="text-gray-400 text-xs uppercase">Camera</div>
-                  <div>{cameraError ? 'Error' : cameraReady ? 'Live' : 'Starting...'}</div>
-                </div>
-                <div className="glass-dark rounded p-3">
-                  <div className="text-gray-400 text-xs uppercase">Left Joint Angle</div>
-                  <div>{Math.round(leftAngle)} deg</div>
-                </div>
-                <div className="glass-dark rounded p-3">
-                  <div className="text-gray-400 text-xs uppercase">Right Joint Angle</div>
-                  <div>{Math.round(rightAngle)} deg</div>
-                </div>
-              </div>
-
-              {cameraError && (
-                <div className="mt-4 text-sm text-red-400">{cameraError}</div>
-              )}
             </div>
 
-            <div className="glass rounded-lg p-4 space-y-4">
-              <div className="text-lg title-font">Gemini Coach</div>
-              <div className="text-sm text-gray-300">{coachTip}</div>
-              {completionMessage && <div className="text-sm text-emerald-300">{completionMessage}</div>}
+            <div className="glass rounded-lg p-4">
+              <div className="text-sm uppercase tracking-wider text-gray-400 mb-2">Monster Window</div>
+              <div className="rounded-lg overflow-hidden border border-red-900/40 bg-black aspect-video">
+                {monsterPanel}
+              </div>
             </div>
           </div>
 
           <div className="glass rounded-lg p-4">
-            <div className="text-sm uppercase tracking-wider text-gray-400 mb-2">Monster Window</div>
-            <div className="rounded-lg overflow-hidden border border-red-900/40 bg-black aspect-video">
-              {monsterPanel}
+            <div className="grid sm:grid-cols-3 gap-3 text-sm">
+              <div className="glass-dark rounded p-3">
+                <div className="text-gray-400 text-xs uppercase">Camera</div>
+                <div>{cameraError ? 'Error' : cameraReady ? 'Live' : 'Starting...'}</div>
+              </div>
+              <div className="glass-dark rounded p-3">
+                <div className="text-gray-400 text-xs uppercase">Left Joint Angle</div>
+                <div>{Math.round(leftAngle)} deg</div>
+              </div>
+              <div className="glass-dark rounded p-3">
+                <div className="text-gray-400 text-xs uppercase">Right Joint Angle</div>
+                <div>{Math.round(rightAngle)} deg</div>
+              </div>
             </div>
+            {cameraError && (
+              <div className="mt-4 text-sm text-red-400">{cameraError}</div>
+            )}
+          </div>
+
+          <div className="glass rounded-lg p-4 space-y-4">
+            <div className="text-lg title-font">Gemini Coach</div>
+            <div className="text-sm text-gray-300">{coachTip}</div>
+            {completionMessage && <div className="text-sm text-emerald-300">{completionMessage}</div>}
           </div>
         </section>
       </div>

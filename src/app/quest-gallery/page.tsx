@@ -4,7 +4,7 @@ import { gsap } from 'gsap'
 import Image from 'next/image'
 import { Header } from '@/components/Header'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
-import { QUESTS } from '@/data/quests'
+import { QUESTS, Quest } from '@/data/quests'
 import { useRouter } from 'next/navigation'
 
 export default function QuestGalleryPage() {
@@ -24,9 +24,13 @@ export default function QuestGalleryPage() {
     return () => ctx.revert()
   }, [])
 
-  async function acceptQuest(questId: string) {
-    setActiveQuestId(questId)
-    router.push(`/quest/${questId}`)
+  async function acceptQuest(quest: Quest) {
+    setActiveQuestId(quest.id)
+    if (quest.mode === 'videoUpload') {
+      router.push(`/quest-videoUpload/${quest.id}`)
+      return
+    }
+    router.push(`/quest/${quest.id}`)
   }
 
   return (
@@ -63,7 +67,14 @@ export default function QuestGalleryPage() {
                 <div className="p-5 space-y-3">
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl font-semibold title-font">{quest.title}</h2>
-                    <span className="text-xs uppercase tracking-wider text-gray-400">{quest.difficulty}</span>
+                    <div className="flex items-center gap-2">
+                      {quest.mode === 'videoUpload' && (
+                        <span className="text-[10px] px-2 py-1 rounded border border-cyan-500/50 text-cyan-300 uppercase tracking-wider">
+                          videoUpload
+                        </span>
+                      )}
+                      <span className="text-xs uppercase tracking-wider text-gray-400">{quest.difficulty}</span>
+                    </div>
                   </div>
                   <div className="flex items-center gap-3 text-sm text-gray-300">
                     <div className="relative h-10 w-10 overflow-hidden rounded-full border border-red-900/40 bg-black/30">
@@ -81,7 +92,7 @@ export default function QuestGalleryPage() {
                   <div className="text-sm text-gray-400">Rep Goal: {quest.repGoal}</div>
                   <p className="text-sm text-gray-400">{quest.blurb}</p>
                   <button
-                    onClick={() => acceptQuest(quest.id)}
+                    onClick={() => acceptQuest(quest)}
                     disabled={activeQuestId === quest.id}
                     className="btn-primary text-sm w-full disabled:opacity-50 disabled:cursor-not-allowed"
                   >

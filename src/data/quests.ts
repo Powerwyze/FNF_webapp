@@ -3,6 +3,7 @@ export type Quest = {
   title: string
   monster: string
   monsterThumbnail: string
+  mode: 'live' | 'videoUpload'
   workout: string
   repGoal: string
   difficulty: 'Novice' | 'Adept' | 'Veteran' | 'Boss'
@@ -16,6 +17,7 @@ export const QUESTS: Quest[] = [
     title: 'Jumping Jacks Goblin',
     monster: 'Goblin',
     monsterThumbnail: '/quests/Goblin_dead.png',
+    mode: 'live',
     workout: 'Jumping Jacks',
     repGoal: '3 rounds of 30',
     difficulty: 'Novice',
@@ -27,6 +29,7 @@ export const QUESTS: Quest[] = [
     title: 'Mountain Climbers Goblin',
     monster: 'Goblin',
     monsterThumbnail: '/quests/Goblin_dead.png',
+    mode: 'live',
     workout: 'Mountain Climbers',
     repGoal: '3 rounds of 20 per side',
     difficulty: 'Novice',
@@ -38,6 +41,7 @@ export const QUESTS: Quest[] = [
     title: 'Crunches Goblin',
     monster: 'Goblin',
     monsterThumbnail: '/quests/Goblin_dead.png',
+    mode: 'live',
     workout: 'Crunches',
     repGoal: '3 rounds of 25',
     difficulty: 'Novice',
@@ -49,6 +53,7 @@ export const QUESTS: Quest[] = [
     title: 'Push-ups Orc',
     monster: 'Orc',
     monsterThumbnail: '/quests/orc-thumbnail.svg',
+    mode: 'live',
     workout: 'Push-ups',
     repGoal: '4 rounds of 12',
     difficulty: 'Adept',
@@ -60,6 +65,7 @@ export const QUESTS: Quest[] = [
     title: 'Back Extensions Orc',
     monster: 'Orc',
     monsterThumbnail: '/quests/orc-thumbnail.svg',
+    mode: 'live',
     workout: 'Back Extensions',
     repGoal: '4 rounds of 15',
     difficulty: 'Adept',
@@ -71,6 +77,7 @@ export const QUESTS: Quest[] = [
     title: 'Jumping Jacks Orc',
     monster: 'Orc',
     monsterThumbnail: '/quests/orc-thumbnail.svg',
+    mode: 'live',
     workout: 'Jumping Jacks',
     repGoal: '4 rounds of 25',
     difficulty: 'Adept',
@@ -82,10 +89,35 @@ export const QUESTS: Quest[] = [
     title: 'Squats Dragon',
     monster: 'Dragon',
     monsterThumbnail: '/quests/dragon-thumbnail.svg',
+    mode: 'live',
     workout: 'Squats',
     repGoal: '5 rounds of 12',
     difficulty: 'Boss',
     image: '/quests/squat_start.JPG',
     blurb: 'Stand tall and drive power through your legs to face the dragon.'
+  },
+  {
+    id: 'orc-pushup-videoUpload',
+    title: 'Push-ups Orc [videoUpload]',
+    monster: 'Orc',
+    monsterThumbnail: '/quests/orc-thumbnail.svg',
+    mode: 'videoUpload',
+    workout: 'Push-ups',
+    repGoal: 'Upload one set of 10 reps',
+    difficulty: 'Adept',
+    image: '/quests/quest-placeholder.svg',
+    blurb: 'Record your push-up set and upload it for battle analysis.'
+  },
+  {
+    id: 'goblin-jumpjack-videoUpload',
+    title: 'Jumping Jacks Goblin [videoUpload]',
+    monster: 'Goblin',
+    monsterThumbnail: '/quests/Goblin_dead.png',
+    mode: 'videoUpload',
+    workout: 'Jumping Jacks',
+    repGoal: 'Upload one set of 10 reps',
+    difficulty: 'Novice',
+    image: '/quests/Jumpingjack_start_position.JPG',
+    blurb: 'Record your jumping jacks and submit the clip to damage the monster.'
   }
 ]

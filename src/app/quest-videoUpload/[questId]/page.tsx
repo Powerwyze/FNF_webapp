@@ -310,7 +310,7 @@ export default function VideoUploadQuestPage() {
             <div>
               <div className="text-3xl title-font">{quest.title}</div>
               <div className="text-sm text-cyan-300 uppercase tracking-wider">videoUpload mode</div>
-              <div className="text-sm text-gray-400">Record clip -> Submit -> TensorFlow + Gemini analysis</div>
+              <div className="text-sm text-gray-400">Record clip, submit it, then run TensorFlow + Gemini analysis.</div>
             </div>
             <button onClick={() => router.push('/quest-gallery')} className="btn-secondary text-sm">
               Exit Quest
@@ -388,4 +388,3 @@ export default function VideoUploadQuestPage() {
     </ProtectedRoute>
   )
 }
-

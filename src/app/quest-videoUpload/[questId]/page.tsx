@@ -7,48 +7,9 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { QUESTS } from '@/data/quests'
 import { MONSTER_PHASE_MEDIA } from '@/data/monsterPhases'
 import { useAuth } from '@/contexts/AuthContext'
-import * as poseDetection from '@tensorflow-models/pose-detection'
-import '@tensorflow/tfjs-backend-webgl'
-import * as tf from '@tensorflow/tfjs-core'
 
 const TARGET_REPS = 10
 const HALF_HEALTH_REP = 3
-
-type Mode = 'pushup' | 'jumping_jack'
-
-function getAngle(a: { x: number; y: number }, b: { x: number; y: number }, c: { x: number; y: number }) {
-  const ab = { x: a.x - b.x, y: a.y - b.y }
-  const cb = { x: c.x - b.x, y: c.y - b.y }
-  const dot = ab.x * cb.x + ab.y * cb.y
-  const magAb = Math.hypot(ab.x, ab.y)
-  const magCb = Math.hypot(cb.x, cb.y)
-  if (!magAb || !magCb) return null
-  const cosine = Math.max(-1, Math.min(1, dot / (magAb * magCb)))
-  return (Math.acos(cosine) * 180) / Math.PI
-}
-
-function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
-  return Math.hypot(a.x - b.x, a.y - b.y)
-}
-
-function findKeypoint(pose: poseDetection.Pose, name: string) {
-  return pose.keypoints.find((k) => k.name === name && (k.score ?? 0) > 0.35)
-}
-
-function getModeFromWorkout(workout: string): Mode {
-  return workout.toLowerCase().includes('jumping') ? 'jumping_jack' : 'pushup'
-}
-
-async function waitForSeek(video: HTMLVideoElement, t: number) {
-  await new Promise<void>((resolve) => {
-    const onSeeked = () => {
-      video.removeEventListener('seeked', onSeeked)
-      resolve()
-    }
-    video.addEventListener('seeked', onSeeked)
-    video.currentTime = t
-  })
-}
 
 export default function VideoUploadQuestPage() {
   const params = useParams<{ questId: string }>()
@@ -76,7 +37,6 @@ export default function VideoUploadQuestPage() {
     () => QUESTS.find((q) => q.id === params.questId && q.mode === 'videoUpload'),
     [params.questId]
   )
-  const mode: Mode = getModeFromWorkout(quest?.workout ?? 'Push-ups')
 
   const monsterStage: 'full' | 'half' | 'dead' =
     repCount >= TARGET_REPS ? 'dead' : repCount >= HALF_HEALTH_REP ? 'half' : 'full'
@@ -157,94 +117,31 @@ export default function VideoUploadQuestPage() {
     if (!quest || !recordedBlob || !user || !session?.access_token) return
     setShowSubmitPrompt(false)
     setAnalyzing(true)
-    setStatusText('Analyzing video with TensorFlow Pose Detection...')
-
-    let reps = 0
-    let phase: 'start' | 'a' | 'b' = 'start'
+    setStatusText('Analyzing video with Gemini...')
 
     try {
-      await tf.setBackend('webgl')
-      await tf.ready()
-
-      const detector = await poseDetection.createDetector(
-        poseDetection.SupportedModels.MoveNet,
-        { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
-      )
-
-      const url = URL.createObjectURL(recordedBlob)
-      const video = document.createElement('video')
-      video.src = url
-      video.muted = true
-      video.playsInline = true
-
-      await new Promise<void>((resolve, reject) => {
-        video.onloadedmetadata = () => resolve()
-        video.onerror = () => reject(new Error('Failed to load recorded video'))
-      })
-
-      const step = 0.12
-      for (let t = 0; t <= video.duration; t += step) {
-        await waitForSeek(video, Math.min(t, video.duration))
-        const poses = await detector.estimatePoses(video)
-        const pose = poses[0]
-        if (!pose) continue
-
-        const ls = findKeypoint(pose, 'left_shoulder')
-        const rs = findKeypoint(pose, 'right_shoulder')
-        const le = findKeypoint(pose, 'left_elbow')
-        const re = findKeypoint(pose, 'right_elbow')
-        const lw = findKeypoint(pose, 'left_wrist')
-        const rw = findKeypoint(pose, 'right_wrist')
-        const lh = findKeypoint(pose, 'left_hip')
-        const rh = findKeypoint(pose, 'right_hip')
-        const la = findKeypoint(pose, 'left_ankle')
-        const ra = findKeypoint(pose, 'right_ankle')
-
-        if (mode === 'pushup') {
-          if (!ls || !rs || !le || !re || !lw || !rw) continue
-          const leftElbow = getAngle(ls, le, lw)
-          const rightElbow = getAngle(rs, re, rw)
-          if (!leftElbow || !rightElbow) continue
-          const avg = (leftElbow + rightElbow) / 2
-          const isUp = avg >= 155
-          const isDown = avg <= 95
-
-          if (phase === 'start' && isUp) phase = 'a'
-          else if (phase === 'a' && isDown) phase = 'b'
-          else if (phase === 'b' && isUp) {
-            reps = Math.min(TARGET_REPS, reps + 1)
-            setRepCount(reps)
-            phase = 'a'
-          }
-        }
-
-        if (mode === 'jumping_jack') {
-          if (!ls || !rs || !lh || !rh || !la || !ra) continue
-          const leftHand = lw ?? le
-          const rightHand = rw ?? re
-          if (!leftHand || !rightHand) continue
-          const shoulderWidth = Math.max(distance(ls, rs), 1)
-          const hipWidth = Math.max(distance(lh, rh), 1)
-          const armSpread = distance(leftHand, rightHand) / shoulderWidth
-          const legSpread = distance(la, ra) / hipWidth
-          const wristsHigh = leftHand.y < ((ls.y + rs.y) / 2) && rightHand.y < ((ls.y + rs.y) / 2)
-          const isOpen = legSpread > 1.55 && (armSpread > 1.6 || wristsHigh)
-          const isClosed = legSpread < 1.35 && armSpread < 1.55
-
-          if (phase === 'start' && isClosed) phase = 'a'
-          else if (phase === 'a' && isOpen) phase = 'b'
-          else if (phase === 'b' && isClosed) {
-            reps = Math.min(TARGET_REPS, reps + 1)
-            setRepCount(reps)
-            phase = 'a'
-          }
-        }
-      }
-
-      detector.dispose()
-      URL.revokeObjectURL(url)
-
       const authHeaders: Record<string, string> = { Authorization: `Bearer ${session.access_token}` }
+      const formData = new FormData()
+      formData.set('userId', user.id)
+      formData.set('workout', quest.workout)
+      formData.set('targetReps', String(TARGET_REPS))
+      formData.set('video', new File([recordedBlob], `${quest.id}.webm`, { type: recordedBlob.type || 'video/webm' }))
+
+      const analyzeRes = await fetch('/api/workout/analyze-video', {
+        method: 'POST',
+        headers: authHeaders,
+        body: formData
+      })
+      if (!analyzeRes.ok) {
+        const errorData = await analyzeRes.json().catch(() => ({}))
+        throw new Error(errorData?.error || 'Gemini analysis failed')
+      }
+      const analyzeData = await analyzeRes.json()
+      const reps = Math.min(TARGET_REPS, Math.max(0, Number(analyzeData?.reps) || 0))
+      const confidence = typeof analyzeData?.confidence === 'string' ? analyzeData.confidence : 'low'
+      const notes = typeof analyzeData?.notes === 'string' ? analyzeData.notes.trim() : ''
+      setRepCount(reps)
+
       const coachRes = await fetch('/api/workout/coach', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders },
@@ -270,10 +167,12 @@ export default function VideoUploadQuestPage() {
           headers: { 'Content-Type': 'application/json', ...authHeaders },
           body: JSON.stringify({ userId: user.id, expGain: 20 })
         })
-        if (expRes.ok) setStatusText(`Quest complete. ${reps} reps counted. Monster defeated.`)
+        const detail = notes ? ` ${notes}` : ''
+        if (expRes.ok) setStatusText(`Quest complete. ${reps} reps counted (${confidence} confidence). Monster defeated.${detail}`)
         else setStatusText(`Workout analyzed (${reps} reps), but EXP update failed.`)
       } else {
-        setStatusText(`Workout analyzed. ${reps} reps counted. Need ${TARGET_REPS} to slay the monster.`)
+        const detail = notes ? ` ${notes}` : ''
+        setStatusText(`Workout analyzed (${confidence} confidence). ${reps} reps counted. Need ${TARGET_REPS} to slay the monster.${detail}`)
       }
     } catch (error) {
       console.error(error)
@@ -310,7 +209,7 @@ export default function VideoUploadQuestPage() {
             <div>
               <div className="text-3xl title-font">{quest.title}</div>
               <div className="text-sm text-cyan-300 uppercase tracking-wider">videoUpload mode</div>
-              <div className="text-sm text-gray-400">Record clip, submit it, then run TensorFlow + Gemini analysis.</div>
+              <div className="text-sm text-gray-400">Record clip, submit it, then run Gemini video analysis.</div>
             </div>
             <button onClick={() => router.push('/quest-gallery')} className="btn-secondary text-sm">
               Exit Quest
@@ -371,7 +270,7 @@ export default function VideoUploadQuestPage() {
             <div className="glass rounded-lg border border-red-700/50 max-w-md w-full p-6 space-y-4">
               <h2 className="text-2xl title-font text-center">Submit Workout?</h2>
               <p className="text-sm text-gray-200 text-center">
-                Submit this recorded clip to run TensorFlow pose analysis and apply damage to the monster.
+                Submit this recorded clip to run Gemini rep analysis and apply damage to the monster.
               </p>
               <div className="flex gap-3">
                 <button onClick={() => setShowSubmitPrompt(false)} className="btn-secondary flex-1">

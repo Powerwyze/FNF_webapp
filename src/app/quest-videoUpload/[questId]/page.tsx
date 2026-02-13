@@ -133,8 +133,15 @@ export default function VideoUploadQuestPage() {
         body: formData
       })
       if (!analyzeRes.ok) {
-        const errorData = await analyzeRes.json().catch(() => ({}))
-        throw new Error(errorData?.error || 'Gemini analysis failed')
+        const raw = await analyzeRes.text()
+        let detail = ''
+        try {
+          const parsed = JSON.parse(raw)
+          detail = parsed?.error || raw
+        } catch {
+          detail = raw
+        }
+        throw new Error(detail ? `Gemini analysis failed (${analyzeRes.status}): ${detail}` : `Gemini analysis failed (${analyzeRes.status})`)
       }
       const analyzeData = await analyzeRes.json()
       const reps = Math.min(TARGET_REPS, Math.max(0, Number(analyzeData?.reps) || 0))

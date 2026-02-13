@@ -6,6 +6,7 @@ import { requireUser } from '@/lib/serverAuth'
 export const runtime = 'nodejs'
 
 const MAX_VIDEO_BYTES = 100 * 1024 * 1024
+const INLINE_FALLBACK_MAX_BYTES = 20 * 1024 * 1024
 const FILE_POLL_MS = 2000
 const FILE_POLL_ATTEMPTS = 20
 
@@ -27,6 +28,26 @@ function extractJson(text: string) {
   }
 
   return ''
+}
+
+function parseAnalysis(text: string) {
+  const jsonText = extractJson(text)
+  if (!jsonText) {
+    throw new Error('Gemini did not return JSON')
+  }
+  const parsed = JSON.parse(jsonText) as {
+    reps?: number
+    confidence?: string
+    notes?: string
+  }
+
+  return {
+    reps: Number.isFinite(parsed.reps) ? Math.max(0, Math.floor(Number(parsed.reps))) : 0,
+    confidence: ['low', 'medium', 'high'].includes(String(parsed.confidence))
+      ? String(parsed.confidence)
+      : 'low',
+    notes: String(parsed.notes ?? '').slice(0, 240)
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -102,39 +123,40 @@ export async function POST(req: NextRequest) {
       'Return strict JSON with this shape:',
       '{"reps": number, "confidence": "low"|"medium"|"high", "notes": string}'
     ].join(' ')
-
-    const result = await model.generateContent([
-      prompt,
-      {
-        fileData: {
-          mimeType: file.mimeType,
-          fileUri: file.uri
+    try {
+      const result = await model.generateContent([
+        prompt,
+        {
+          fileData: {
+            mimeType: file.mimeType,
+            fileUri: file.uri
+          }
         }
+      ])
+      return Response.json(parseAnalysis(result.response.text() ?? ''))
+    } catch (fileError) {
+      if (bytes.byteLength > INLINE_FALLBACK_MAX_BYTES) {
+        const message = fileError instanceof Error ? fileError.message : 'Gemini Files analysis failed'
+        return Response.json({ error: message }, { status: 502 })
       }
-    ])
 
-    const raw = result.response.text() ?? ''
-    const jsonText = extractJson(raw)
-    if (!jsonText) {
-      return Response.json({ error: 'Gemini did not return JSON' }, { status: 502 })
+      try {
+        const inlineResult = await model.generateContent([
+          prompt,
+          {
+            inlineData: {
+              data: bytes.toString('base64'),
+              mimeType: clip.type || 'video/webm'
+            }
+          }
+        ])
+        return Response.json(parseAnalysis(inlineResult.response.text() ?? ''))
+      } catch (inlineError) {
+        const fileMessage = fileError instanceof Error ? fileError.message : 'Gemini Files analysis failed'
+        const inlineMessage = inlineError instanceof Error ? inlineError.message : 'Gemini inline analysis failed'
+        return Response.json({ error: `Gemini analysis failed. Files: ${fileMessage}. Inline: ${inlineMessage}` }, { status: 502 })
+      }
     }
-
-    const parsed = JSON.parse(jsonText) as {
-      reps?: number
-      confidence?: string
-      notes?: string
-    }
-    const reps = Number.isFinite(parsed.reps) ? Math.max(0, Math.floor(Number(parsed.reps))) : 0
-    const confidence = ['low', 'medium', 'high'].includes(String(parsed.confidence))
-      ? String(parsed.confidence)
-      : 'low'
-    const notes = String(parsed.notes ?? '').slice(0, 240)
-
-    return Response.json({
-      reps,
-      confidence,
-      notes
-    })
   } catch (error) {
     console.error('Analyze video error:', error)
     const message = error instanceof Error && error.message ? error.message : 'Failed to analyze video'

@@ -176,7 +176,10 @@ export default function VideoUploadQuestPage() {
       }
     } catch (error) {
       console.error(error)
-      setStatusText('Video analysis failed. Try recording again with full body visible.')
+      const message = error instanceof Error && error.message
+        ? error.message
+        : 'Video analysis failed. Try recording again with full body visible.'
+      setStatusText(message)
     } finally {
       setAnalyzing(false)
     }

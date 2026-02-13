@@ -1,8 +1,17 @@
 import { NextRequest } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { FileState, GoogleAIFileManager } from '@google/generative-ai/server'
 import { requireUser } from '@/lib/serverAuth'
 
-const MAX_VIDEO_BYTES = 20 * 1024 * 1024
+export const runtime = 'nodejs'
+
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024
+const FILE_POLL_MS = 2000
+const FILE_POLL_ATTEMPTS = 20
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
 
 function extractJson(text: string) {
   const trimmed = text.trim()
@@ -21,6 +30,7 @@ function extractJson(text: string) {
 }
 
 export async function POST(req: NextRequest) {
+  let uploadedFileName: string | null = null
   try {
     const form = await req.formData()
     const userId = String(form.get('userId') ?? '')
@@ -47,7 +57,7 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: 'Invalid file type' }, { status: 400 })
     }
     if (clip.size <= 0 || clip.size > MAX_VIDEO_BYTES) {
-      return Response.json({ error: 'Video must be between 1 byte and 20 MB' }, { status: 400 })
+      return Response.json({ error: 'Video must be between 1 byte and 100 MB' }, { status: 400 })
     }
 
     const apiKey = process.env.GEMINI_API_KEY
@@ -56,11 +66,33 @@ export async function POST(req: NextRequest) {
     }
 
     const bytes = Buffer.from(await clip.arrayBuffer())
+    const fileManager = new GoogleAIFileManager(apiKey)
     const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({
       model: 'gemini-1.5-flash',
       generationConfig: { responseMimeType: 'application/json' }
     })
+
+    const uploadResponse = await fileManager.uploadFile(bytes, {
+      mimeType: clip.type || 'video/webm',
+      displayName: `${workout}-upload-${Date.now()}`
+    })
+    uploadedFileName = uploadResponse.file.name
+
+    let file = uploadResponse.file
+    for (let i = 0; i < FILE_POLL_ATTEMPTS; i += 1) {
+      if (file.state === FileState.ACTIVE) break
+      if (file.state === FileState.FAILED) {
+        return Response.json({ error: file.error?.message || 'Gemini failed to process the video' }, { status: 502 })
+      }
+      await sleep(FILE_POLL_MS)
+      const refreshed = await fileManager.getFile(file.name)
+      file = refreshed
+    }
+
+    if (file.state !== FileState.ACTIVE) {
+      return Response.json({ error: 'Video is still processing in Gemini. Try again shortly.' }, { status: 504 })
+    }
 
     const prompt = [
       'Analyze this workout video and estimate full reps completed by the person.',
@@ -74,9 +106,9 @@ export async function POST(req: NextRequest) {
     const result = await model.generateContent([
       prompt,
       {
-        inlineData: {
-          data: bytes.toString('base64'),
-          mimeType: clip.type || 'video/webm'
+        fileData: {
+          mimeType: file.mimeType,
+          fileUri: file.uri
         }
       }
     ])
@@ -105,6 +137,16 @@ export async function POST(req: NextRequest) {
     })
   } catch (error) {
     console.error('Analyze video error:', error)
-    return Response.json({ error: 'Failed to analyze video' }, { status: 500 })
+    const message = error instanceof Error && error.message ? error.message : 'Failed to analyze video'
+    return Response.json({ error: message }, { status: 500 })
+  } finally {
+    if (uploadedFileName && process.env.GEMINI_API_KEY) {
+      try {
+        const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY)
+        await fileManager.deleteFile(uploadedFileName)
+      } catch {
+        // Best-effort cleanup only.
+      }
+    }
   }
 }

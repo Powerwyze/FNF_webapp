@@ -9,6 +9,7 @@ const MAX_VIDEO_BYTES = 100 * 1024 * 1024
 const INLINE_FALLBACK_MAX_BYTES = 20 * 1024 * 1024
 const FILE_POLL_MS = 2000
 const FILE_POLL_ATTEMPTS = 20
+const DEFAULT_MODEL_CANDIDATES = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.5-flash-lite']
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -50,6 +51,48 @@ function parseAnalysis(text: string) {
   }
 }
 
+function getModelCandidates() {
+  const envModel = process.env.GEMINI_VIDEO_MODEL?.trim()
+  const models = envModel ? [envModel, ...DEFAULT_MODEL_CANDIDATES] : DEFAULT_MODEL_CANDIDATES
+  return [...new Set(models)]
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error)
+}
+
+function isMissingModelError(error: unknown) {
+  const msg = getErrorMessage(error).toLowerCase()
+  return msg.includes('404') && msg.includes('not found') && msg.includes('models/')
+}
+
+async function runAnalysisWithModelFallback(args: {
+  genAI: GoogleGenerativeAI
+  prompt: string
+  part: { fileData: { mimeType: string; fileUri: string } } | { inlineData: { data: string; mimeType: string } }
+}) {
+  const tried: string[] = []
+  const modelCandidates = getModelCandidates()
+
+  for (const modelName of modelCandidates) {
+    tried.push(modelName)
+    const model = args.genAI.getGenerativeModel({
+      model: modelName,
+      generationConfig: { responseMimeType: 'application/json' }
+    })
+
+    try {
+      const result = await model.generateContent([args.prompt, args.part])
+      return parseAnalysis(result.response.text() ?? '')
+    } catch (error) {
+      if (isMissingModelError(error)) continue
+      throw new Error(`[${modelName}] ${getErrorMessage(error)}`)
+    }
+  }
+
+  throw new Error(`No supported Gemini model found. Tried: ${tried.join(', ')}`)
+}
+
 export async function POST(req: NextRequest) {
   let uploadedFileName: string | null = null
   try {
@@ -89,10 +132,6 @@ export async function POST(req: NextRequest) {
     const bytes = Buffer.from(await clip.arrayBuffer())
     const fileManager = new GoogleAIFileManager(apiKey)
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      generationConfig: { responseMimeType: 'application/json' }
-    })
 
     const uploadResponse = await fileManager.uploadFile(bytes, {
       mimeType: clip.type || 'video/webm',
@@ -124,36 +163,38 @@ export async function POST(req: NextRequest) {
       '{"reps": number, "confidence": "low"|"medium"|"high", "notes": string}'
     ].join(' ')
     try {
-      const result = await model.generateContent([
+      const fileAnalysis = await runAnalysisWithModelFallback({
+        genAI,
         prompt,
-        {
+        part: {
           fileData: {
             mimeType: file.mimeType,
             fileUri: file.uri
           }
         }
-      ])
-      return Response.json(parseAnalysis(result.response.text() ?? ''))
+      })
+      return Response.json(fileAnalysis)
     } catch (fileError) {
       if (bytes.byteLength > INLINE_FALLBACK_MAX_BYTES) {
-        const message = fileError instanceof Error ? fileError.message : 'Gemini Files analysis failed'
+        const message = getErrorMessage(fileError)
         return Response.json({ error: message }, { status: 502 })
       }
 
       try {
-        const inlineResult = await model.generateContent([
+        const inlineAnalysis = await runAnalysisWithModelFallback({
+          genAI,
           prompt,
-          {
+          part: {
             inlineData: {
               data: bytes.toString('base64'),
               mimeType: clip.type || 'video/webm'
             }
           }
-        ])
-        return Response.json(parseAnalysis(inlineResult.response.text() ?? ''))
+        })
+        return Response.json(inlineAnalysis)
       } catch (inlineError) {
-        const fileMessage = fileError instanceof Error ? fileError.message : 'Gemini Files analysis failed'
-        const inlineMessage = inlineError instanceof Error ? inlineError.message : 'Gemini inline analysis failed'
+        const fileMessage = getErrorMessage(fileError)
+        const inlineMessage = getErrorMessage(inlineError)
         return Response.json({ error: `Gemini analysis failed. Files: ${fileMessage}. Inline: ${inlineMessage}` }, { status: 502 })
       }
     }

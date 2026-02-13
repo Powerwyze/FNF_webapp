@@ -10,6 +10,10 @@ import { useAuth } from '@/contexts/AuthContext'
 
 const TARGET_REPS = 10
 const HALF_HEALTH_REP = 3
+const MAX_RECORDING_MS = 15000
+const MAX_UPLOAD_BYTES = 4 * 1024 * 1024
+const RECORDER_VIDEO_BPS = 350000
+const RECORDER_AUDIO_BPS = 16000
 
 export default function VideoUploadQuestPage() {
   const params = useParams<{ questId: string }>()
@@ -20,6 +24,7 @@ export default function VideoUploadQuestPage() {
   const streamRef = useRef<MediaStream | null>(null)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
+  const recordingTimeoutRef = useRef<number | null>(null)
 
   const [cameraError, setCameraError] = useState('')
   const [cameraReady, setCameraReady] = useState(false)
@@ -50,7 +55,7 @@ export default function VideoUploadQuestPage() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: true
+          audio: false
         })
         if (cancelled) return
         streamRef.current = stream
@@ -72,6 +77,10 @@ export default function VideoUploadQuestPage() {
       cancelled = true
       streamRef.current?.getTracks().forEach((t) => t.stop())
       streamRef.current = null
+      if (recordingTimeoutRef.current) {
+        window.clearTimeout(recordingTimeoutRef.current)
+        recordingTimeoutRef.current = null
+      }
       if (recordedUrl) URL.revokeObjectURL(recordedUrl)
     }
   }, [])
@@ -88,27 +97,50 @@ export default function VideoUploadQuestPage() {
     setShowSubmitPrompt(false)
 
     chunksRef.current = []
-    const recorder = new MediaRecorder(streamRef.current, { mimeType: 'video/webm' })
+    const recorderMimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
+      ? 'video/webm;codecs=vp8'
+      : 'video/webm'
+    const recorder = new MediaRecorder(streamRef.current, {
+      mimeType: recorderMimeType,
+      videoBitsPerSecond: RECORDER_VIDEO_BPS,
+      audioBitsPerSecond: RECORDER_AUDIO_BPS
+    })
     recorderRef.current = recorder
 
     recorder.ondataavailable = (event) => {
       if (event.data && event.data.size > 0) chunksRef.current.push(event.data)
     }
     recorder.onstop = () => {
+      if (recordingTimeoutRef.current) {
+        window.clearTimeout(recordingTimeoutRef.current)
+        recordingTimeoutRef.current = null
+      }
       const blob = new Blob(chunksRef.current, { type: 'video/webm' })
       const url = URL.createObjectURL(blob)
       setRecordedBlob(blob)
       setRecordedUrl(url)
       setShowSubmitPrompt(true)
-      setStatusText('Recording stopped. Submit this workout for analysis?')
+      const mb = (blob.size / (1024 * 1024)).toFixed(2)
+      setStatusText(`Recording stopped (${mb} MB). Submit this workout for analysis?`)
     }
 
     recorder.start()
     setIsRecording(true)
+    recordingTimeoutRef.current = window.setTimeout(() => {
+      if (recorderRef.current && recorderRef.current.state === 'recording') {
+        recorderRef.current.stop()
+        setIsRecording(false)
+        setStatusText('Auto-stopped at 15s to keep upload size small.')
+      }
+    }, MAX_RECORDING_MS)
   }
 
   function stopRecording() {
     if (!recorderRef.current || recorderRef.current.state === 'inactive') return
+    if (recordingTimeoutRef.current) {
+      window.clearTimeout(recordingTimeoutRef.current)
+      recordingTimeoutRef.current = null
+    }
     recorderRef.current.stop()
     setIsRecording(false)
   }
@@ -120,6 +152,11 @@ export default function VideoUploadQuestPage() {
     setStatusText('Analyzing video with Gemini...')
 
     try {
+      if (recordedBlob.size > MAX_UPLOAD_BYTES) {
+        const size = (recordedBlob.size / (1024 * 1024)).toFixed(2)
+        throw new Error(`Clip too large (${size} MB). Keep the set under 15 seconds and record again.`)
+      }
+
       const authHeaders: Record<string, string> = { Authorization: `Bearer ${session.access_token}` }
       const formData = new FormData()
       formData.set('userId', user.id)
